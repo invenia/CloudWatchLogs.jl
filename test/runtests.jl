@@ -1,7 +1,15 @@
+using Mocking
+Mocking.enable(; force=true)
+
 using CloudWatchLogs
-using Base.Test
+using Compat.Test
+
+using AWSCore: AWSConfig
+using Memento
+
+const LOGGER = getlogger(CloudWatchLogs)
+
 
 @testset "CloudWatchLogs.jl" begin
-    # Write your own tests here.
-    @test 1 == 2
+    include("mocked_aws.jl")
 end
