@@ -2,14 +2,14 @@ __precompile__()
 module CloudWatchLogs
 
 using AWSCore: AWSConfig, AWSException
-using AWSSDK.CloudWatchLogs: describe_log_streams, create_log_stream, put_log_events
+using AWSSDK.CloudWatchLogs: describe_log_streams, create_log_stream, delete_log_stream, put_log_events
 using Compat: @__MODULE__, Nothing
 using Compat.UUIDs
 using Memento
 using Mocking
 using TimeZones
 
-export CloudWatchLogStream, submit_logs
+export CloudWatchLogStream, submit_logs, create_stream, delete_stream
 export CloudWatchLogHandler
 export StreamNotFoundException
 

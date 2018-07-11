@@ -88,9 +88,25 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - !Ref LogTestPolicy
+      MaxSessionDuration: 10800  # three hours
+
+  StackInfoPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allow access to stack outputs
+      Users:
+        - !Sub ${PublicCIUser}
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudformation:DescribeStacks
+            Resource:
+              - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*
 
 Outputs:
   LogTestRoleArn:
     Value: !GetAtt LogTestRole.Arn
     Export:
-      Name: LogTestRoleArn
+      Name: !Sub ${AWS::StackName}-LogTestRoleArn
