@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  A stack for testing CloudWatch Logs logging from public CI.
+
+Parameters:
+  PublicCIUser:
+    Description: User which can assume the testing role
+    Type: String
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub pubci-${AWS::StackName}-cwl-test-group
+
+  ForbiddenLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub pubci-${AWS::StackName}-cwl-test-group-forbidden
+  ForbiddenGroupLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref ForbiddenLogGroup
+      LogStreamName: !Sub pubci-${AWS::StackName}-cwl-test-group-forbidden-stream
+
+  BadStreamLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub pubci-${AWS::StackName}-cwl-test-group-badstream
+  ForbiddenLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref BadStreamLogGroup
+      LogStreamName: !Sub pubci-${AWS::StackName}-cwl-test-stream-forbidden
+
+  LogTestPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allow access to CloudWatch Logs resources for testing
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:DescribeLogStreams
+            Resource:
+              - !GetAtt LogGroup.Arn
+              - !GetAtt BadStreamLogGroup.Arn
+          - Effect: Allow
+            Action:
+              - logs:PutLogEvents
+            Resource:
+              - !Sub
+                  - arn:aws:logs:*:${AWS::AccountId}:log-group:*:*:${LogStream}
+                  - { LogStream: !Ref ForbiddenGroupLogStream }
+              - !GetAtt BadStreamLogGroup.Arn
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+            Resource:
+              - !GetAtt LogGroup.Arn
+          - Effect: Allow
+            Action:
+              - logs:DeleteLogStream
+            Resource:
+              - !GetAtt LogGroup.Arn
+              - !Sub
+                  - arn:aws:logs:*:${AWS::AccountId}:log-group:${LogGroup}:*:*
+                  - { LogGroup: !Ref LogGroup }
+          - Effect: Allow
+            Action:
+              - logs:PutLogEvents
+              - logs:GetLogEvents
+            Resource:
+              - !GetAtt LogGroup.Arn
+              - !Sub
+                  - arn:aws:logs:*:${AWS::AccountId}:log-group:${LogGroup}:*:*
+                  - { LogGroup: !Ref LogGroup }
+
+  LogTestRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:user/${PublicCIUser}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref LogTestPolicy
+
+Outputs:
+  LogTestRoleArn:
+    Value: !GetAtt LogTestRole.Arn
+    Export:
+      Name: LogTestRoleArn
