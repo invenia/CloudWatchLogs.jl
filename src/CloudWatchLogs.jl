@@ -2,8 +2,9 @@ __precompile__()
 module CloudWatchLogs
 
 using AWSCore: AWSConfig, AWSException
-using AWSSDK.CloudWatchLogs: describe_log_streams, put_log_events
+using AWSSDK.CloudWatchLogs: describe_log_streams, create_log_stream, put_log_events
 using Compat: @__MODULE__, Nothing
+using Compat.UUIDs
 using Memento
 using Mocking
 using TimeZones

@@ -15,6 +15,25 @@ struct CloudWatchLogStream
     end
 end
 
+function create_stream(
+    config::AWSConfig,
+    log_group_name::AbstractString,
+    # this probably won't collide, most callers should add identifying information though
+    log_stream_name::AbstractString="julia-$(uuid4())",
+)
+    create_log_stream(config; logGroupName=log_group_name, logStreamName=log_stream_name)
+    return log_stream_name
+end
+
+function delete_stream(
+    config::AWSConfig,
+    log_group_name::AbstractString,
+    log_stream_name::AbstractString,
+)
+    delete_log_stream(config; logGroupName=log_group_name, logStreamName=log_stream_name)
+    return nothing
+end
+
 sequence_token(stream::CloudWatchLogStream) = stream.token[]
 
 function new_sequence_token(stream::CloudWatchLogStream)
