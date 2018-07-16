@@ -1,3 +1,8 @@
+"""
+    LogEvent(message, timestamp)
+
+Log event for submission to CloudWatch Logs.
+"""
 struct LogEvent
     message::String
     timestamp::Int

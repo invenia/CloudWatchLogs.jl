@@ -1,3 +1,11 @@
+"""
+    CloudWatchLogStream(config::AWSConfig, log_group_name, log_stream_name)
+
+Create a reference to a CloudWatch Log Stream on AWS with the log group name and log
+stream name.
+This constructor will automatically fetch the latest [sequence token](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutLogEvents.html#CWL-PutLogEvents-request-sequenceToken)
+for the stream.
+"""
 struct CloudWatchLogStream
     config::AWSConfig
     log_group_name::String
@@ -15,6 +23,15 @@ struct CloudWatchLogStream
     end
 end
 
+"""
+    create_stream(config::AWSConfig, log_group_name) -> String
+    create_stream(config::AWSConfig, log_group_name, log_stream_name) -> String
+
+Create a CloudWatch Log Stream under a given Log Group.
+If the log stream name is not provided, one is generated using a UUID4.
+
+Returns the log stream name.
+"""
 function create_stream(
     config::AWSConfig,
     log_group_name::AbstractString,
@@ -25,6 +42,11 @@ function create_stream(
     return String(log_stream_name)
 end
 
+"""
+    delete_stream(config::AWSConfig, log_group_name, log_stream_name)
+
+Delete a CloudWatch Log Stream from a given Log Group.
+"""
 function delete_stream(
     config::AWSConfig,
     log_group_name::AbstractString,
@@ -34,12 +56,26 @@ function delete_stream(
     return nothing
 end
 
+"""
+    sequence_token(config::AWSConfig, log_group_name, log_stream_name) -> Union{String, Nothing}
+
+Return the current sequence token for the stream.
+"""
 sequence_token(stream::CloudWatchLogStream) = stream.token[]
 
 function new_sequence_token(stream::CloudWatchLogStream)
     return new_sequence_token(stream.config, stream.log_group_name, stream.log_stream_name)
 end
 
+"""
+    new_sequence_token(stream::CloudWatchLogStream) -> Union{String, Nothing}
+    new_sequence_token(config::AWSConfig, log_group_name, log_stream_name) -> Union{String, Nothing}
+
+Fetch the current sequence token for the stream from AWS.
+
+Returns `nothing` if the stream does not have a sequence token yet (e.g., if no events have
+been logged).
+"""
 function new_sequence_token(
     config::AWSConfig,
     log_group::AbstractString,
@@ -72,9 +108,18 @@ function new_sequence_token(
     end
 end
 
+"""
+    update_sequence_token!(stream::CloudWatchLogStream) -> Union{String, Nothing}
+    update_sequence_token!(stream::CloudWatchLogStream, token) -> Union{String, Nothing}
+
+Fetch the current sequence token for the stream from AWS and store it.
+Alternatively, set the token for the stream to `token`.
+
+Returns the token.
+"""
 function update_sequence_token!(
     stream::CloudWatchLogStream,
-    token=new_sequence_token(stream),
+    token::Union{String, Nothing}=new_sequence_token(stream),
 )
     stream.token[] = token
 end
@@ -89,6 +134,24 @@ function _put_log_events(stream::CloudWatchLogStream, events::AbstractVector{Log
     )
 end
 
+"""
+    submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEvent}) -> Int
+
+Submit a list of log events to AWS.
+
+None of the log events can be more than 2 hours in the future, or older than 14 days or the
+retention period of the log group.
+If this occurs, those log messages will be rejected but the rest will succeed.
+
+Submission of _all_ log events will fail if:
+
+* the log events are more than 1 MiB of data
+* the log events are not in chronological order by timestamp
+* there are more than 10000 log events in `events`
+* the log events span more than 24 hours
+
+Returns the number of events successfully submitted.
+"""
 function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEvent})
     if length(events) > MAX_BATCH_LENGTH
         error(LOGGER, LogSubmissionException(
