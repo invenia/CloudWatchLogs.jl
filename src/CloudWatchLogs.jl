@@ -9,12 +9,13 @@ using Memento
 using Mocking
 using TimeZones
 
-export CloudWatchLogStream, submit_logs, create_stream, delete_stream
+export CloudWatchLogStream, LogEvent, submit_logs, create_stream, delete_stream
 export CloudWatchLogHandler
-export StreamNotFoundException
+export StreamNotFoundException, LogSubmissionException
 
 const LOGGER = getlogger(@__MODULE__)
 const MAX_BATCH_SIZE = 1048576
+const MAX_BATCH_LENGTH = 10000
 
 __init__() = Memento.register(LOGGER)
 

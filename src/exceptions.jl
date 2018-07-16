@@ -15,3 +15,7 @@ function Base.showerror(io::IO, exception::StreamNotFoundException)
         print(io, " ", exception.msg)
     end
 end
+
+struct LogSubmissionException <: CloudWatchLogsException
+    msg::String
+end

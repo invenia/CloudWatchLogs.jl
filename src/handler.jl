@@ -30,10 +30,15 @@ function process_available_logs!(cwlh::CloudWatchLogHandler)
     events = Vector{LogEvent}()
     batch_size = 0
 
-    while isready(cwlh.channel) && length(events) <= 10000 && batch_size <= MAX_BATCH_SIZE
-        event = take!(cwlh.channel)
-        batch_size += sizeof(event.message) + 26
-        push!(events, event)
+    while isready(cwlh.channel) && length(events) <= MAX_BATCH_LENGTH
+        event = fetch(cwlh.channel)
+        batch_size += aws_size(event)
+        if batch_size <= MAX_BATCH_SIZE
+            take!(cwlh.channel)
+            push!(events, event)
+        else
+            break
+        end
     end
 
     @mock submit_logs(cwlh.stream, events)
@@ -62,6 +67,8 @@ function process_logs!(cwlh::CloudWatchLogHandler)
     end
 
     debug(LOGGER, "Handler for group '$group' stream '$stream' terminated normally")
+
+    return nothing
 end
 
 unix_timestamp_ms(zdt::ZonedDateTime) = TimeZones.zdt2unix(Int, zdt) * 1000
@@ -69,7 +76,7 @@ unix_timestamp_ms(zdt::ZonedDateTime) = TimeZones.zdt2unix(Int, zdt) * 1000
 unix_timestamp_ms(dt::DateTime) = unix_timestamp_ms(ZonedDateTime(dt, tz"UTC"))
 
 function Memento.emit(cwlh::CloudWatchLogHandler, record::Record)
-    dt = haskey(record, :date) ? record[:date] : Dates.now()
+    dt = haskey(record, :date) ? record[:date] : Dates.now(tz"UTC")
     timestamp = unix_timestamp_ms(dt)
     message = format(cwlh.fmt, record)
     event = LogEvent(message, timestamp)
