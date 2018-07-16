@@ -71,7 +71,7 @@ function process_logs!(cwlh::CloudWatchLogHandler)
     return nothing
 end
 
-unix_timestamp_ms(zdt::ZonedDateTime) = TimeZones.zdt2unix(Int, zdt) * 1000
+unix_timestamp_ms(zdt::ZonedDateTime) = floor(Int, TimeZones.zdt2unix(zdt) * 1000)
 # assume UTC because you have to assume something
 unix_timestamp_ms(dt::DateTime) = unix_timestamp_ms(ZonedDateTime(dt, tz"UTC"))
 
