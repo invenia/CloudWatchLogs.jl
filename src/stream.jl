@@ -1,3 +1,10 @@
+struct CloudWatchLogStream
+    config::AWSConfig
+    log_group_name::String
+    log_stream_name::String
+    token::Ref{Union{String, Nothing}}
+end
+
 """
     CloudWatchLogStream(config::AWSConfig, log_group_name, log_stream_name)
 
@@ -6,21 +13,19 @@ stream name.
 This constructor will automatically fetch the latest [sequence token](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutLogEvents.html#CWL-PutLogEvents-request-sequenceToken)
 for the stream.
 """
-struct CloudWatchLogStream
-    config::AWSConfig
-    log_group_name::String
-    log_stream_name::String
-    token::Ref{Union{String, Nothing}}
-
-    function CloudWatchLogStream(
-        config::AWSConfig,
-        log_group_name::AbstractString,
-        log_stream_name::AbstractString,
+function CloudWatchLogStream(
+    config::AWSConfig,
+    log_group_name::AbstractString,
+    log_stream_name::AbstractString,
+)
+    stream = CloudWatchLogStream(
+        config,
+        log_group_name,
+        log_stream_name,
+        Ref{Union{String, Nothing}}(),
     )
-        stream = new(config, log_group_name, log_stream_name, Ref{Union{String, Nothing}}())
-        update_sequence_token!(stream)
-        return stream
-    end
+    update_sequence_token!(stream)
+    return stream
 end
 
 """

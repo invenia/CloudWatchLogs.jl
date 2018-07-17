@@ -4,13 +4,15 @@ Mocking.enable(; force=true)
 using CloudWatchLogs
 using Compat.Test
 
-using AWSCore: AWSConfig, aws_config, AWSCredentials
+using AWSCore: AWSConfig, aws_config, AWSCredentials, AWSException
 import AWSSDK
 import AWSSDK.CloudFormation
 import AWSSDK.STS
+using Compat.Dates
 using Compat.UUIDs
-using Memento
 import EzXML
+using Memento
+using TimeZones
 
 const CloudWatchLogsSDK = AWSSDK.CloudWatchLogs
 const LOGGER = getlogger(CloudWatchLogs)

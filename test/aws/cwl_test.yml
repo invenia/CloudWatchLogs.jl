@@ -54,6 +54,13 @@ Resources:
                   - arn:aws:logs:*:${AWS::AccountId}:log-group:*:*:${LogStream}
                   - { LogStream: !Ref ForbiddenGroupLogStream }
               - !GetAtt BadStreamLogGroup.Arn
+          - Effect: Deny
+            Action:
+              - logs:PutLogEvents
+            Resource:
+              - !Sub
+                  - arn:aws:logs:*:${AWS::AccountId}:log-group:${LogGroup}:*:${LogStream}
+                  - { LogGroup: !Ref BadStreamLogGroup, LogStream: !Ref ForbiddenLogStream }
           - Effect: Allow
             Action:
               - logs:CreateLogStream
