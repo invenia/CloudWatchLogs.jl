@@ -61,7 +61,11 @@ function process_available_logs!(cwlh::CloudWatchLogHandler)
         end
     end
 
-    @mock submit_logs(cwlh.stream, events)
+    try
+        @mock submit_logs(cwlh.stream, events)
+    catch e
+        warn(LOGGER, CapturedException(e, catch_backtrace()))
+    end
 end
 
 """

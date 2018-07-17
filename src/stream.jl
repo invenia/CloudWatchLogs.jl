@@ -211,57 +211,53 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
     min_valid_event = 1
     max_valid_event = length(events)
 
-    try
-        json_response = f()
+    json_response = f()
 
-        if haskey(json_response, "nextSequenceToken")
-            update_sequence_token!(stream, json_response["nextSequenceToken"])
-        end
+    if haskey(json_response, "nextSequenceToken")
+        update_sequence_token!(stream, json_response["nextSequenceToken"])
+    end
 
-        if haskey(json_response, "rejectedLogEventsInfo")
-            rejected_info = json_response["rejectedLogEventsInfo"]
+    if haskey(json_response, "rejectedLogEventsInfo")
+        rejected_info = json_response["rejectedLogEventsInfo"]
 
-            if haskey(rejected_info, "expiredLogEventEndIndex")
-                idx = Int(rejected_info["expiredLogEventEndIndex"]) + 1
-                min_valid_event = max(min_valid_event, idx)
+        if haskey(rejected_info, "expiredLogEventEndIndex")
+            idx = Int(rejected_info["expiredLogEventEndIndex"]) + 1
+            min_valid_event = max(min_valid_event, idx)
 
-                warn(LOGGER) do
-                    string(
-                        "Cannot log the following events, ",
-                        "as they are older than the log retention policy allows: ",
-                        events[1:idx],
-                    )
-                end
-            end
-
-            if haskey(rejected_info, "tooOldLogEventEndIndex")
-                idx = Int(rejected_info["tooOldLogEventEndIndex"]) + 1
-                min_valid_event = max(min_valid_event, idx)
-
-                warn(LOGGER) do
-                    string(
-                        "Cannot log the following events, ",
-                        "as they are more than 14 days old: ",
-                        events[1:idx],
-                    )
-                end
-            end
-
-            if haskey(rejected_info, "tooNewLogEventStartIndex")
-                idx = Int(rejected_info["tooNewLogEventStartIndex"]) + 1
-                max_valid_event = min(max_valid_event, idx)
-
-                warn(LOGGER) do
-                    string(
-                        "Cannot log the following events, ",
-                        "as they are newer than 2 hours in the future: ",
-                        events[idx:end],
-                    )
-                end
+            warn(LOGGER) do
+                string(
+                    "Cannot log the following events, ",
+                    "as they are older than the log retention policy allows: ",
+                    events[1:idx],
+                )
             end
         end
-    catch e
-        warn(LOGGER, CapturedException(e, catch_backtrace()))
+
+        if haskey(rejected_info, "tooOldLogEventEndIndex")
+            idx = Int(rejected_info["tooOldLogEventEndIndex"]) + 1
+            min_valid_event = max(min_valid_event, idx)
+
+            warn(LOGGER) do
+                string(
+                    "Cannot log the following events, ",
+                    "as they are more than 14 days old: ",
+                    events[1:idx],
+                )
+            end
+        end
+
+        if haskey(rejected_info, "tooNewLogEventStartIndex")
+            idx = Int(rejected_info["tooNewLogEventStartIndex"]) + 1
+            max_valid_event = min(max_valid_event, idx)
+
+            warn(LOGGER) do
+                string(
+                    "Cannot log the following events, ",
+                    "as they are newer than 2 hours in the future: ",
+                    events[idx:end],
+                )
+            end
+        end
     end
 
     return length(min_valid_event:max_valid_event)
