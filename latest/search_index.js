@@ -1,0 +1,115 @@
+var documenterSearchIndex = {"docs": [
+
+{
+    "location": "index.html#",
+    "page": "Home",
+    "title": "Home",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "index.html#CloudWatchLogs-1",
+    "page": "Home",
+    "title": "CloudWatchLogs",
+    "category": "section",
+    "text": "(Image: Stable) (Image: Latest) (Image: Build Status) (Image: CodeCov)CloudWatchLogs.jl provides easy access to CloudWatch Log Streams, and provides a Memento log handler."
+},
+
+{
+    "location": "pages/api.html#",
+    "page": "API",
+    "title": "API",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "pages/api.html#API-1",
+    "page": "API",
+    "title": "API",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "pages/api.html#CloudWatchLogs.LogEvent",
+    "page": "API",
+    "title": "CloudWatchLogs.LogEvent",
+    "category": "type",
+    "text": "LogEvent(message::AbstractString, datetime=Dates.now(tz\"UTC\"))\nLogEvent(message::AbstractString, timestamp)\n\nLog event for submission to CloudWatch Logs.\n\n\n\n"
+},
+
+{
+    "location": "pages/api.html#LogEvent-1",
+    "page": "API",
+    "title": "LogEvent",
+    "category": "section",
+    "text": "Modules = [CloudWatchLogs]\nPages = [\"event.jl\"]\nPrivate = false"
+},
+
+{
+    "location": "pages/api.html#CloudWatchLogs.CloudWatchLogStream-Tuple{Dict{Symbol,Any},AbstractString,AbstractString}",
+    "page": "API",
+    "title": "CloudWatchLogs.CloudWatchLogStream",
+    "category": "method",
+    "text": "CloudWatchLogStream(config::AWSConfig, log_group_name, log_stream_name)\n\nCreate a reference to a CloudWatch Log Stream on AWS with the log group name and log stream name. This constructor will automatically fetch the latest sequence token for the stream.\n\n\n\n"
+},
+
+{
+    "location": "pages/api.html#CloudWatchLogs.create_stream",
+    "page": "API",
+    "title": "CloudWatchLogs.create_stream",
+    "category": "function",
+    "text": "create_stream(config::AWSConfig, log_group_name) -> String\ncreate_stream(config::AWSConfig, log_group_name, log_stream_name) -> String\n\nCreate a CloudWatch Log Stream under a given Log Group. If the log stream name is not provided, one is generated using a UUID4.\n\nReturns the log stream name.\n\n\n\n"
+},
+
+{
+    "location": "pages/api.html#CloudWatchLogs.delete_stream-Tuple{Dict{Symbol,Any},AbstractString,AbstractString}",
+    "page": "API",
+    "title": "CloudWatchLogs.delete_stream",
+    "category": "method",
+    "text": "delete_stream(config::AWSConfig, log_group_name, log_stream_name)\n\nDelete a CloudWatch Log Stream from a given Log Group.\n\n\n\n"
+},
+
+{
+    "location": "pages/api.html#CloudWatchLogs.submit_log-Tuple{CloudWatchLogs.CloudWatchLogStream,CloudWatchLogs.LogEvent}",
+    "page": "API",
+    "title": "CloudWatchLogs.submit_log",
+    "category": "method",
+    "text": "submit_log(stream::CloudWatchLogStream, event::LogEvent) -> Int\n\nCall submit_logs with one event.\n\n\n\n"
+},
+
+{
+    "location": "pages/api.html#CloudWatchLogs.submit_logs-Tuple{CloudWatchLogs.CloudWatchLogStream,AbstractArray{CloudWatchLogs.LogEvent,1}}",
+    "page": "API",
+    "title": "CloudWatchLogs.submit_logs",
+    "category": "method",
+    "text": "submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEvent}) -> Int\n\nSubmit a list of log events to AWS.\n\nNone of the log events can be more than 2 hours in the future, or older than 14 days or the retention period of the log group. If this occurs, those log messages will be rejected but the rest will succeed.\n\nSubmission of _all_ log events will fail if:\n\nthe log events are more than 1 MiB of data\nthe log events are not in chronological order by timestamp\nthere are more than 10000 log events in events\nthe log events span more than 24 hours\n\nReturns the number of events successfully submitted.\n\n\n\n"
+},
+
+{
+    "location": "pages/api.html#Streams-1",
+    "page": "API",
+    "title": "Streams",
+    "category": "section",
+    "text": "Modules = [CloudWatchLogs]\nPages = [\"stream.jl\", \"exceptions.jl\"]\nPrivate = false"
+},
+
+{
+    "location": "pages/api.html#CloudWatchLogs.CloudWatchLogHandler-Union{Tuple{Dict{Symbol,Any},AbstractString,AbstractString,F}, Tuple{Dict{Symbol,Any},AbstractString,AbstractString}, Tuple{F}} where F<:Memento.Formatter",
+    "page": "API",
+    "title": "CloudWatchLogs.CloudWatchLogHandler",
+    "category": "method",
+    "text": "CloudWatchLogHandler(\n    config::AWSConfig,\n    log_group_name,\n    log_stream_name,\n    formatter::Memento.Formatter,\n)\n\nConstruct a Memento Handler for logging to a CloudWatch Log Stream. This constructor creates a task which asynchronously submits logs to the stream.\n\nA CloudWatch Log Event has only two properties: timestamp and message.\n\nIf a Record has a date property it will be used as the timestamp, otherwise the current time will be captured when Memento.emit is called. All DateTimes will be assumed to be in UTC.\n\nThe message will be generated by calling Memento.format on the Record with this handler\'s formatter.\n\n\n\n"
+},
+
+{
+    "location": "pages/api.html#Handler-1",
+    "page": "API",
+    "title": "Handler",
+    "category": "section",
+    "text": "Modules = [CloudWatchLogs]\nPages = [\"handler.jl\"]\nPrivate = false"
+},
+
+]}
