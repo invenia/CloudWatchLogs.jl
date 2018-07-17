@@ -33,28 +33,28 @@ function CloudWatchLogHandler(
     formatter::F=DefaultFormatter(),
 ) where F<:Formatter
     ch = Channel{LogEvent}(Inf)
-    cwlh = CloudWatchLogHandler(
+    handler = CloudWatchLogHandler(
         CloudWatchLogStream(config, log_group_name, log_stream_name),
         ch,
         formatter,
     )
 
-    tsk = @schedule process_logs!(cwlh)
+    tsk = @schedule process_logs!(handler)
     # channel will be closed if task fails, to avoid unknowingly discarding logs
     bind(ch, tsk)
 
-    return cwlh
+    return handler
 end
 
-function process_available_logs!(cwlh::CloudWatchLogHandler)
+function process_available_logs!(handler::CloudWatchLogHandler)
     events = Vector{LogEvent}()
     batch_size = 0
 
-    while isready(cwlh.channel) && length(events) <= MAX_BATCH_LENGTH
-        event = fetch(cwlh.channel)
+    while isready(handler.channel) && length(events) <= MAX_BATCH_LENGTH
+        event = fetch(handler.channel)
         batch_size += aws_size(event)
         if batch_size <= MAX_BATCH_SIZE
-            take!(cwlh.channel)
+            take!(handler.channel)
             push!(events, event)
         else
             break
@@ -62,28 +62,28 @@ function process_available_logs!(cwlh::CloudWatchLogHandler)
     end
 
     try
-        @mock submit_logs(cwlh.stream, events)
+        @mock submit_logs(handler.stream, events)
     catch e
         warn(LOGGER, CapturedException(e, catch_backtrace()))
     end
 end
 
 """
-    process_logs!(cwlh::CloudWatchLogHandler)
+    process_logs!(handler::CloudWatchLogHandler)
 
 Continually pulls logs from the handler's channel and submits them to AWS.
 This function should terminate silently when the channel is closed.
 """
-function process_logs!(cwlh::CloudWatchLogHandler)
-    group = cwlh.stream.log_group_name
-    stream = cwlh.stream.log_stream_name
+function process_logs!(handler::CloudWatchLogHandler)
+    group = handler.stream.log_group_name
+    stream = handler.stream.log_stream_name
 
     debug(LOGGER, "Handler for group '$group' stream '$stream' initiated")
 
     try
-        while isopen(cwlh.channel)  # might be able to avoid the error in this case
-            wait(cwlh.channel)
-            process_available_logs!(cwlh)
+        while isopen(handler.channel)  # might be able to avoid the error in this case
+            wait(handler.channel)
+            process_available_logs!(handler)
         end
     catch err
         if !(err isa InvalidStateException && err.state === :closed)
@@ -101,9 +101,9 @@ function process_logs!(cwlh::CloudWatchLogHandler)
     return nothing
 end
 
-function Memento.emit(cwlh::CloudWatchLogHandler, record::Record)
+function Memento.emit(handler::CloudWatchLogHandler, record::Record)
     dt = haskey(record, :date) ? record[:date] : Dates.now(tz"UTC")
-    message = format(cwlh.fmt, record)
+    message = format(handler.fmt, record)
     event = LogEvent(message, dt)
-    put!(cwlh.channel, event)
+    put!(handler.channel, event)
 end
