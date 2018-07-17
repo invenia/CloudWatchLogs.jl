@@ -266,3 +266,10 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
 
     return length(min_valid_event:max_valid_event)
 end
+
+"""
+    submit_log(stream::CloudWatchLogStream, event::LogEvent) -> Int
+
+Call [`submit_logs`](@ref) with one event.
+"""
+submit_log(stream::CloudWatchLogStream, event::LogEvent) = submit_logs(stream, [event])

@@ -13,7 +13,7 @@ using Memento
 using Mocking
 using TimeZones
 
-export CloudWatchLogStream, LogEvent, submit_logs, create_stream, delete_stream
+export CloudWatchLogStream, LogEvent, submit_log, submit_logs, create_stream, delete_stream
 export CloudWatchLogHandler
 export StreamNotFoundException, LogSubmissionException
 
