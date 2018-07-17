@@ -97,22 +97,9 @@ function process_logs!(cwlh::CloudWatchLogHandler)
     return nothing
 end
 
-"""
-    unix_timestamp_ms(dt::Union{DateTime, ZonedDateTime}) -> Int
-
-Get a datetime's representation as a UNIX timestamp in milliseconds.
-`DateTime`s with no time zone are assumed to be in UTC.
-"""
-function unix_timestamp_ms end
-
-unix_timestamp_ms(zdt::ZonedDateTime) = floor(Int, TimeZones.zdt2unix(zdt) * 1000)
-# assume UTC because you have to assume something
-unix_timestamp_ms(dt::DateTime) = unix_timestamp_ms(ZonedDateTime(dt, tz"UTC"))
-
 function Memento.emit(cwlh::CloudWatchLogHandler, record::Record)
     dt = haskey(record, :date) ? record[:date] : Dates.now(tz"UTC")
-    timestamp = unix_timestamp_ms(dt)
     message = format(cwlh.fmt, record)
-    event = LogEvent(message, timestamp)
+    event = LogEvent(message, dt)
     put!(cwlh.channel, event)
 end
