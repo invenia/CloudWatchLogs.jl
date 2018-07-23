@@ -81,7 +81,7 @@ end
         for c = 'a':'e'
             warn(logger, "$c")
         end
-        yield()
+        sleep(5 * CloudWatchLogs.AWS_RATE_LIMIT)  # probably max time we might have to wait
 
         messages = map(le -> le.message, logs)
         timestamps = map(le -> le.timestamp, logs)

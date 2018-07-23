@@ -191,6 +191,7 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
     function retry_cond(s, e)
         if e isa AWSException
             if 500 <= e.cause.status <= 504
+                debug(LOGGER, sprint(io -> showerror(io, e)))
                 return (s, true)
             elseif e.cause.status == 400 && e.code == "InvalidSequenceTokenException"
                 debug(LOGGER) do
@@ -203,13 +204,16 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
                 update_sequence_token!(stream)
 
                 return (s, true)
+            elseif e.cause.status == 400 && e.code == "ThrottlingException"
+                debug(LOGGER, sprint(io -> showerror(io, e)))
+                return (s, true)
             end
         end
 
         return (s, false)
     end
 
-    f = retry(check=retry_cond) do
+    f = retry(delays=AWS_DELAYS, check=retry_cond) do
         @mock _put_log_events(stream, events)
     end
 
@@ -233,7 +237,7 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
                 string(
                     "Cannot log the following events, ",
                     "as they are older than the log retention policy allows: ",
-                    events[1:idx],
+                    events[1:idx-1],
                 )
             end
         end
@@ -246,20 +250,20 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
                 string(
                     "Cannot log the following events, ",
                     "as they are more than 14 days old: ",
-                    events[1:idx],
+                    events[1:idx-1],
                 )
             end
         end
 
         if haskey(rejected_info, "tooNewLogEventStartIndex")
-            idx = Int(rejected_info["tooNewLogEventStartIndex"]) + 1
+            idx = Int(rejected_info["tooNewLogEventStartIndex"])
             max_valid_event = min(max_valid_event, idx)
 
             warn(LOGGER) do
                 string(
                     "Cannot log the following events, ",
                     "as they are newer than 2 hours in the future: ",
-                    events[idx:end],
+                    events[idx+1:end],
                 )
             end
         end

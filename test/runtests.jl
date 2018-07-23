@@ -12,6 +12,7 @@ using Compat.Dates
 using Compat.UUIDs
 import EzXML
 using Memento
+using Memento.Test
 using TimeZones
 
 const CloudWatchLogsSDK = AWSSDK.CloudWatchLogs
@@ -81,6 +82,7 @@ end
 
 
 @testset "CloudWatchLogs.jl" begin
+    include("event.jl")
     include("mocked_aws.jl")
     include("online.jl")
 end

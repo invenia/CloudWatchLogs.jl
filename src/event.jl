@@ -28,8 +28,16 @@ struct LogEvent
     timestamp::Int
 
     function LogEvent(message::AbstractString, timestamp::Real)
+        message = String(message)
+
         if isempty(message)
             throw(ArgumentError("Log Event message must be non-empty"))
+        end
+
+        if sizeof(message) > MAX_EVENT_SIZE - 26
+            throw(ArgumentError(
+                "Log Event message cannot be more than than $MAX_EVENT_SIZE bytes"
+            ))
         end
 
         if timestamp < 0

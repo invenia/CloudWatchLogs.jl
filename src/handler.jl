@@ -50,7 +50,7 @@ function process_available_logs!(handler::CloudWatchLogHandler)
     events = Vector{LogEvent}()
     batch_size = 0
 
-    while isready(handler.channel) && length(events) <= MAX_BATCH_LENGTH
+    while isready(handler.channel) && length(events) < MAX_BATCH_LENGTH
         event = fetch(handler.channel)
         batch_size += aws_size(event)
         if batch_size <= MAX_BATCH_SIZE
@@ -59,6 +59,13 @@ function process_available_logs!(handler::CloudWatchLogHandler)
         else
             break
         end
+    end
+
+    if isempty(events)
+        warn(LOGGER, string(
+            "Channel was ready but no events were found. ",
+            "Is there another task pulling logs from this handler?",
+        ))
     end
 
     try
@@ -84,6 +91,7 @@ function process_logs!(handler::CloudWatchLogHandler)
         while isopen(handler.channel)  # might be able to avoid the error in this case
             wait(handler.channel)
             process_available_logs!(handler)
+            sleep(AWS_RATE_LIMIT)  # wait at least this long due to AWS rate limits
         end
     catch err
         if !(err isa InvalidStateException && err.state === :closed)

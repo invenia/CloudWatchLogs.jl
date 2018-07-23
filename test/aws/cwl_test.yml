@@ -12,6 +12,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub pubci-${AWS::StackName}-cwl-test-group
+      RetentionInDays: 7
 
   ForbiddenLogGroup:
     Type: AWS::Logs::LogGroup
