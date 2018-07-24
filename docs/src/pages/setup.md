@@ -64,8 +64,6 @@ export STACK_NAME=CloudWatchLogs-jl-00011
 To create a basic stack with your current profile:
 
 ```sh
-export STACK_ROLE_ARN=arn:aws:iam::263813748431:role/CloudFormationAdmin
-
 aws cloudformation create-stack \
     --template-body $TEMPLATE \
     --parameters ParameterKey=PublicCIUser,ParameterValue=$PUBLIC_CI_USER \
