@@ -1,7 +1,9 @@
 @testset "Online" begin
 
 CI_USER_CFG = aws_config()
-TEST_STACK_NAME = "CloudWatchLogs-jl-00011"
+# do not set this variable in CI; it should be versioned with the code
+# this is for locally overriding the stack used in testing
+TEST_STACK_NAME = get(ENV, "CLOUDWATCHLOGSJL_STACK_NAME", "CloudWatchLogs-jl-00011")
 TEST_RESOURCE_PREFIX = "pubci-$TEST_STACK_NAME-cwl-test"
 TEST_LOG_GROUP = "$TEST_RESOURCE_PREFIX-group"
 FORBIDDEN_LOG_GROUP = "$TEST_RESOURCE_PREFIX-group-forbidden"
