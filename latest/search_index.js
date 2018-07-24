@@ -17,6 +17,46 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#Usage-1",
+    "page": "Home",
+    "title": "Usage",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "index.html#Direct-1",
+    "page": "Home",
+    "title": "Direct",
+    "category": "section",
+    "text": "CloudWatchLogs.jl uses AWSCore.jl for authentication and communication with Amazon Web Services. Many functions accept a config::AWSConfig parameter, which can be retrieved from AWSCore\'s aws_config function.CloudWatch Log Streams can be created and deleted by name using create_stream and delete_stream. Those streams (or previously-existing streams) can be wrapped in a CloudWatchLogStream.LogEvents are simply string messages and timestamps. By default, the timestamp is the current time. You can submit LogEvents to a CloudWatchLogStream using submit_logs or submit_log.Here is an example:using CloudWatchLogs\nusing AWSCore\n\nconfig = aws_config()\nstream = CloudWatchLogStream(\n    config, \"existing-log-group\", create_stream(\"my-stream-$(uuid1())\")\n)\nsubmit_log(stream, LogEvent(\"Hello, I\'m a log\"))\nsubmit_logs(stream, [LogEvent(\"I\'m log #$i\") for i in 1:3])"
+},
+
+{
+    "location": "index.html#With-Memento-1",
+    "page": "Home",
+    "title": "With Memento",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "index.html#Single-Process-1",
+    "page": "Home",
+    "title": "Single Process",
+    "category": "section",
+    "text": "CloudWatchLogs.jl also provides a log handler for Memento.jl.To add a handler to the root logger:push!(getlogger(\"root\"), CloudWatchLogHandler(aws_config(), \"my-log-group\", \"my-log-stream\"))Or, to add a handler to a package\'s logger:# in the package\'s root module\nconst LOGGER = getlogger(@__MODULE__)\n\nfunction __init__()\n    Memento.register(LOGGER)\n    push!(LOGGER, CloudWatchLogHandler(aws_config(), \"my-log-group\", \"my-log-stream\"))\nend"
+},
+
+{
+    "location": "index.html#Parallel-Usage-1",
+    "page": "Home",
+    "title": "Parallel Usage",
+    "category": "section",
+    "text": "Only one source can log to a CloudWatch Log Stream at a time, as each log submission must be submitted with the previous submission\'s sequence token. With Memento, this means you need a stream and handler for each process you will be logging to your logger from.To add a handler with a unique stream to the root logger on each process:@everywhere using Memento\n@everywhere using Compat.UUIDs\n@everywhere push!(getlogger(\"root\"), CloudWatchLogHandler(aws_config(), \"my-log-group\", \"my-log-stream-$(uuid1())\"))Or, to add a handler to a package\'s logger which will generate a new stream for each process it\'s loaded on:# in the package\'s root module\nconst LOGGER = getlogger(@__MODULE__)\n\nfunction __init__()\n    Memento.register(LOGGER)\n    push!(LOGGER, CloudWatchLogHandler(aws_config(), \"my-log-group\", \"my-log-stream-$(uuid1())\"))\nend"
+},
+
+{
     "location": "pages/api.html#",
     "page": "API",
     "title": "API",
@@ -110,6 +150,86 @@ var documenterSearchIndex = {"docs": [
     "title": "Handler",
     "category": "section",
     "text": "Modules = [CloudWatchLogs]\nPages = [\"handler.jl\"]\nPrivate = false"
+},
+
+{
+    "location": "pages/setup.html#",
+    "page": "Setup a Test Stack",
+    "title": "Setup a Test Stack",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "pages/setup.html#Setting-up-a-Test-Environment-1",
+    "page": "Setup a Test Stack",
+    "title": "Setting up a Test Environment",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "pages/setup.html#Prerequisites-1",
+    "page": "Setup a Test Stack",
+    "title": "Prerequisites",
+    "category": "section",
+    "text": "You must have an AWS account. Setting up the test stack will require permissions for IAM, CloudFormation, and CloudWatch Logs.The instructions below will sometimes use the AWS CLI.At Invenia we have a dedicated account for public CI, so the actions below are performed with an administrator role in that account."
+},
+
+{
+    "location": "pages/setup.html#Setting-up-the-Account-1",
+    "page": "Setup a Test Stack",
+    "title": "Setting up the Account",
+    "category": "section",
+    "text": "These are manual steps to take when setting up the testing account."
+},
+
+{
+    "location": "pages/setup.html#Create-a-Testing-User-1",
+    "page": "Setup a Test Stack",
+    "title": "Create a Testing User",
+    "category": "section",
+    "text": "This user will be responsible for actually running the tests. The user will be passed to CloudFormation on stack creation and given permission to assume the stack\'s testing role. This approach allows the same user to be used for multiple testing stacks in the same account, which is useful for iterating on stack design.Since the user is given permissions by CloudFormation, it needs no permissions at creation time. It will, however, need access keys. Save these for running tests, ideally as a profile in your AWS credentials file.At Invenia, we create a user dedicated to the project, in this case called CloudWatchLogsJL."
+},
+
+{
+    "location": "pages/setup.html#Create-a-Dedicated-Stack-Creation-Role-(Optional)-1",
+    "page": "Setup a Test Stack",
+    "title": "Create a Dedicated Stack Creation Role (Optional)",
+    "category": "section",
+    "text": "If you wish to have greater control and visibility over stack creation, create a dedicated administrator role which will manage the creation of resources in the test stack. Edit the Trust Relationship for this role in the IAM console to allow access from CloudFormation. Adding this to the role\'s policy statement will accomplish this:{\n  \"Effect\": \"Allow\",\n  \"Principal\": {\n    \"Service\": \"cloudformation.amazonaws.com\"\n  },\n  \"Action\": \"sts:AssumeRole\"\n}"
+},
+
+{
+    "location": "pages/setup.html#Creating-the-Stack-1",
+    "page": "Setup a Test Stack",
+    "title": "Creating the Stack",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "pages/setup.html#Variables-1",
+    "page": "Setup a Test Stack",
+    "title": "Variables",
+    "category": "section",
+    "text": "# relative to the package directory\nexport TEMPLATE=file://test/aws/cwl_test.yml\n\n# the testing user created above\nexport PUBLIC_CI_USER=CloudWatchLogsJL\n\n# your stack name\n# all the Invenia stack names will be CloudWatchLogs-jl-#####, counting up\n# do not attempt to give two stacks the same name\nexport STACK_NAME=CloudWatchLogs-jl-00011"
+},
+
+{
+    "location": "pages/setup.html#Command-1",
+    "page": "Setup a Test Stack",
+    "title": "Command",
+    "category": "section",
+    "text": "To create a basic stack with your current profile:export STACK_ROLE_ARN=arn:aws:iam::263813748431:role/CloudFormationAdmin\n\naws cloudformation create-stack \\\n    --template-body $TEMPLATE \\\n    --parameters ParameterKey=PublicCIUser,ParameterValue=$PUBLIC_CI_USER \\\n    --stack-name $STACK_NAMEOr if you created a dedicated stack creation role in the optional step above:export STACK_ROLE_ARN=arn:aws:iam::263813748431:role/CloudFormationAdmin\n\naws cloudformation create-stack \\\n    --template-body $TEMPLATE \\\n    --capabilities CAPABILITY_NAMED_IAM \\\n    --role-arn $STACK_ROLE_ARN \\\n    --parameters ParameterKey=PublicCIUser,ParameterValue=$PUBLIC_CI_USER \\\n    --stack-name $STACK_NAMEYou can check the status of stack creation with the AWS CloudFormation console or with the AWS CLI."
+},
+
+{
+    "location": "pages/setup.html#Running-Tests-1",
+    "page": "Setup a Test Stack",
+    "title": "Running Tests",
+    "category": "section",
+    "text": "You must authenticate with the testing user, either by setting environment variables or using an AWS profile. The environment variables for Invenia\'s stack are privately set in the Travis CI repository settings.The stack used to test is versioned with the tests, in the test/online.jl file. If you wish to override this for your own testing, set the CLOUDWATCHLOGSJL_STACK_NAME environment variable.After this, running Julia tests normally should work!"
 },
 
 ]}
