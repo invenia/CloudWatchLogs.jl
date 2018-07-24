@@ -221,7 +221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Setup a Test Stack",
     "title": "Command",
     "category": "section",
-    "text": "To create a basic stack with your current profile:export STACK_ROLE_ARN=arn:aws:iam::263813748431:role/CloudFormationAdmin\n\naws cloudformation create-stack \\\n    --template-body $TEMPLATE \\\n    --parameters ParameterKey=PublicCIUser,ParameterValue=$PUBLIC_CI_USER \\\n    --stack-name $STACK_NAMEOr if you created a dedicated stack creation role in the optional step above:export STACK_ROLE_ARN=arn:aws:iam::263813748431:role/CloudFormationAdmin\n\naws cloudformation create-stack \\\n    --template-body $TEMPLATE \\\n    --capabilities CAPABILITY_NAMED_IAM \\\n    --role-arn $STACK_ROLE_ARN \\\n    --parameters ParameterKey=PublicCIUser,ParameterValue=$PUBLIC_CI_USER \\\n    --stack-name $STACK_NAMEYou can check the status of stack creation with the AWS CloudFormation console or with the AWS CLI."
+    "text": "To create a basic stack with your current profile:aws cloudformation create-stack \\\n    --template-body $TEMPLATE \\\n    --parameters ParameterKey=PublicCIUser,ParameterValue=$PUBLIC_CI_USER \\\n    --stack-name $STACK_NAMEOr if you created a dedicated stack creation role in the optional step above:export STACK_ROLE_ARN=arn:aws:iam::263813748431:role/CloudFormationAdmin\n\naws cloudformation create-stack \\\n    --template-body $TEMPLATE \\\n    --capabilities CAPABILITY_NAMED_IAM \\\n    --role-arn $STACK_ROLE_ARN \\\n    --parameters ParameterKey=PublicCIUser,ParameterValue=$PUBLIC_CI_USER \\\n    --stack-name $STACK_NAMEYou can check the status of stack creation with the AWS CloudFormation console or with the AWS CLI."
 },
 
 {

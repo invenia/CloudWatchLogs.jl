@@ -14,9 +14,7 @@ export PUBLIC_CI_USER=CloudWatchLogsJL
 # your stack name
 # all the Invenia stack names will be CloudWatchLogs-jl-#####, counting up
 # do not attempt to give two stacks the same name
-export STACK_NAME=CloudWatchLogs-jl-00011</code></pre><h3><a class="nav-anchor" id="Command-1" href="#Command-1">Command</a></h3><p>To create a basic stack with your current profile:</p><pre><code class="language-sh">export STACK_ROLE_ARN=arn:aws:iam::263813748431:role/CloudFormationAdmin
-
-aws cloudformation create-stack \
+export STACK_NAME=CloudWatchLogs-jl-00011</code></pre><h3><a class="nav-anchor" id="Command-1" href="#Command-1">Command</a></h3><p>To create a basic stack with your current profile:</p><pre><code class="language-sh">aws cloudformation create-stack \
     --template-body $TEMPLATE \
     --parameters ParameterKey=PublicCIUser,ParameterValue=$PUBLIC_CI_USER \
     --stack-name $STACK_NAME</code></pre><p>Or if you created a dedicated stack creation role in the optional step above:</p><pre><code class="language-sh">export STACK_ROLE_ARN=arn:aws:iam::263813748431:role/CloudFormationAdmin
