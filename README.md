@@ -6,3 +6,5 @@
 [![CodeCov](https://codecov.io/gh/invenia/CloudWatchLogs.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/invenia/CloudWatchLogs.jl)
 
 CloudWatchLogs.jl provides easy access to CloudWatch Log Streams, and provides a [Memento](https://github.com/invenia/Memento.jl) log handler.
+
+The documentation linked above contains usage examples, API documentation, and instructions for setting up a stack for testing.
