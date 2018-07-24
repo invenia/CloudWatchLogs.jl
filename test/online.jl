@@ -104,7 +104,7 @@ end
         @test submit_log(stream, LogEvent("Hello AWS")) == 1
         @test submit_logs(stream, LogEvent.(["Second log", "Third log"])) == 2
 
-        sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
+        sleep(2)  # wait until AWS has injested the logs; this may or may not be enough
         response = CloudWatchLogsSDK.get_log_events(
             CFG;
             logGroupName=TEST_LOG_GROUP,
@@ -360,7 +360,7 @@ end
         end
 
         # wait for the logs to be submitted and for AWS to injest them
-        sleep(5)
+        sleep(10)
         response = CloudWatchLogsSDK.get_log_events(
             CFG;
             logGroupName=TEST_LOG_GROUP,
