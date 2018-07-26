@@ -3,7 +3,7 @@
 CI_USER_CFG = aws_config()
 # do not set this variable in CI; it should be versioned with the code
 # this is for locally overriding the stack used in testing
-TEST_STACK_NAME = get(ENV, "CLOUDWATCHLOGSJL_STACK_NAME", "CloudWatchLogs-jl-00011")
+TEST_STACK_NAME = get(ENV, "CLOUDWATCHLOGSJL_STACK_NAME", "CloudWatchLogs-jl-00014")
 TEST_RESOURCE_PREFIX = "pubci-$TEST_STACK_NAME-cwl-test"
 TEST_LOG_GROUP = "$TEST_RESOURCE_PREFIX-group"
 FORBIDDEN_LOG_GROUP = "$TEST_RESOURCE_PREFIX-group-forbidden"
@@ -24,7 +24,77 @@ new_stream = let
     end
 end
 
-@testset "Create/delete streams" begin
+new_group = let
+    counter = 1
+
+    function new_group(category::AbstractString)
+        stream_name = @sprintf "pubci-%s-%03d-%s" category counter LOG_RUN_ID
+        counter += 1
+        return stream_name
+    end
+end
+
+@testset "Create/delete groups and streams" begin
+    @testset "Named group" begin
+        group_name = new_group("create_group")
+        @test create_group(CFG, group_name; tags=Dict("Temporary"=>"true")) == group_name
+
+        response = CloudWatchLogsSDK.describe_log_groups(
+            CFG;
+            logGroupNamePrefix=group_name,
+            limit=1,
+        )
+
+        groups = response["logGroups"]
+
+        @test !isempty(groups)
+        @test groups[1]["logGroupName"] == group_name
+
+        delete_group(CFG, group_name)
+
+        response = CloudWatchLogsSDK.describe_log_groups(
+            CFG;
+            logGroupNamePrefix=group_name,
+            limit=1,
+        )
+
+        groups = response["logGroups"]
+
+        @test isempty(groups) || groups[1]["logGroupName"] != group_name
+    end
+
+    @testset "Unnamed group" begin
+        group_name = create_group(CFG; tags=Dict("Temporary"=>"true"))
+
+        response = CloudWatchLogsSDK.describe_log_groups(
+            CFG;
+            logGroupNamePrefix=group_name,
+            limit=1,
+        )
+
+        groups = response["logGroups"]
+
+        @test !isempty(groups)
+        @test groups[1]["logGroupName"] == group_name
+
+        delete_group(CFG, group_name)
+
+        response = CloudWatchLogsSDK.describe_log_groups(
+            CFG;
+            logGroupNamePrefix=group_name,
+            limit=1,
+        )
+
+        groups = response["logGroups"]
+
+        @test isempty(groups) || groups[1]["logGroupName"] != group_name
+    end
+
+    @testset "Not allowed" begin
+        @test_throws AWSException create_group(CFG, "delta∆")  # invalid characters
+        @test_throws AWSException delete_group(CFG, TEST_LOG_GROUP)  # explicitly forbidden
+    end
+
     @testset "Named stream" begin
         stream_name = new_stream("create_stream")
         @test create_stream(CFG, TEST_LOG_GROUP, stream_name) == stream_name
