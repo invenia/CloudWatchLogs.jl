@@ -6,14 +6,17 @@ using AWSSDK.CloudWatchLogs:
     describe_log_streams,
     create_log_stream,
     delete_log_stream,
+    create_log_group,
+    delete_log_group,
     put_log_events
-using Compat: @__MODULE__, Nothing
+using Compat: @__MODULE__, Nothing, AbstractDict
 using Compat.UUIDs
 using Memento
 using Mocking
 using TimeZones
 
-export CloudWatchLogStream, LogEvent, submit_log, submit_logs, create_stream, delete_stream
+export CloudWatchLogStream, LogEvent, submit_log, submit_logs
+export create_group, delete_group, create_stream, delete_stream
 export CloudWatchLogHandler
 export StreamNotFoundException, LogSubmissionException
 

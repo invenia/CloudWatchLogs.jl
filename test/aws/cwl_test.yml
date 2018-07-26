@@ -84,6 +84,22 @@ Resources:
               - !Sub
                   - arn:aws:logs:*:${AWS::AccountId}:log-group:${LogGroup}:*:*
                   - { LogGroup: !Ref LogGroup }
+          - Effect: Allow
+            Action:
+              - logs:DescribeLogGroups
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:DeleteLogGroup
+            Resource: "*"
+          - Effect: Deny
+            Action:
+              - logs:DeleteLogGroup
+            Resource:
+              - !GetAtt LogGroup.Arn
+              - !GetAtt BadStreamLogGroup.Arn
+              - !GetAtt ForbiddenLogGroup.Arn
 
   LogTestRole:
     Type: AWS::IAM::Role

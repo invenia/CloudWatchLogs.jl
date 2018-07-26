@@ -29,6 +29,40 @@ function CloudWatchLogStream(
 end
 
 """
+    create_group(config::AWSConfig) -> String
+    create_group(config::AWSConfig, log_group_name) -> String
+
+Create a CloudWatch Log Group.
+If the log group name is not provided, one is generated using a UUID4.
+
+Returns the log group name.
+"""
+function create_group(
+    config::AWSConfig,
+    # this probably won't collide, most callers should add identifying information though
+    log_group_name::AbstractString="julia-$(uuid4())";
+    tags::AbstractDict{<:AbstractString, <:AbstractString}=Dict{String, String}()
+)
+    tags = Dict{String, String}(tags)
+
+    create_log_group(config; logGroupName=log_group_name, tags=tags)
+    return String(log_group_name)
+end
+
+"""
+    delete_stream(config::AWSConfig, log_group_name)
+
+Delete a CloudWatch Log Group.
+"""
+function delete_group(
+    config::AWSConfig,
+    log_group_name::AbstractString,
+)
+    delete_log_group(config; logGroupName=log_group_name)
+    return nothing
+end
+
+"""
     create_stream(config::AWSConfig, log_group_name) -> String
     create_stream(config::AWSConfig, log_group_name, log_stream_name) -> String
 
