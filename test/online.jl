@@ -473,7 +473,7 @@ end
         end
 
         # wait for the logs to be submitted
-        for delay in CloudWatchLogs.AWS_DELAYS
+        for delay in CloudWatchLogs.PUTLOGEVENTS_DELAYS
             isready(handler.channel) || break
             sleep(delay)
         end

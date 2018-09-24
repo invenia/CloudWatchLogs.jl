@@ -91,7 +91,7 @@ function process_logs!(handler::CloudWatchLogHandler)
         while isopen(handler.channel)  # might be able to avoid the error in this case
             wait(handler.channel)
             process_available_logs!(handler)
-            sleep(AWS_RATE_LIMIT)  # wait at least this long due to AWS rate limits
+            sleep(PUTLOGEVENTS_RATE_LIMIT)  # wait at least this long due to AWS rate limits
         end
     catch err
         if !(err isa InvalidStateException && err.state === :closed)
