@@ -39,7 +39,7 @@ function CloudWatchLogHandler(
         formatter,
     )
 
-    tsk = @schedule process_logs!(handler)
+    tsk = @async process_logs!(handler)
     # channel will be closed if task fails, to avoid unknowingly discarding logs
     bind(ch, tsk)
 
