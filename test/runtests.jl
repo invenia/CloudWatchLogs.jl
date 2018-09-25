@@ -10,6 +10,7 @@ import AWSSDK
 import AWSSDK.CloudFormation
 import AWSSDK.STS
 using Compat.Dates
+using Compat.Printf
 using Compat.UUIDs
 import EzXML
 using Memento

@@ -10,6 +10,7 @@ using AWSSDK.CloudWatchLogs:
     delete_log_group,
     put_log_events
 using Compat: @__MODULE__, Nothing, AbstractDict
+using Compat.Dates
 using Compat.UUIDs
 using MbedTLS: MbedException
 using Memento
