@@ -1,3 +1,23 @@
+const RETRYABLE_CODES = (
+    "IncompleteSignature",
+    "ThrottlingException",
+    "RequestExpired",
+)
+
+function aws_retry_cond(s, e)
+    if e isa AWSException && (500 <= e.cause.status <= 504 || e.code in RETRYABLE_CODES)
+        debug(LOGGER, "CloudWatchLogs operation encountered $(e.code); retrying")
+        return (s, true)
+    elseif e isa MbedException
+        debug(LOGGER, "CloudWatchLogs operation encountered $e; retrying")
+        return (s, true)
+    end
+
+    return (s, false)
+end
+
+aws_retry(f) = retry(f, delays=GENERIC_AWS_DELAYS, check=aws_retry_cond)()
+
 struct CloudWatchLogStream
     config::AWSConfig
     log_group_name::String
@@ -45,7 +65,9 @@ function create_group(
 )
     tags = Dict{String, String}(tags)
 
-    create_log_group(config; logGroupName=log_group_name, tags=tags)
+    aws_retry() do
+        create_log_group(config; logGroupName=log_group_name, tags=tags)
+    end
     return String(log_group_name)
 end
 
@@ -58,7 +80,9 @@ function delete_group(
     config::AWSConfig,
     log_group_name::AbstractString,
 )
-    delete_log_group(config; logGroupName=log_group_name)
+    aws_retry() do
+        delete_log_group(config; logGroupName=log_group_name)
+    end
     return nothing
 end
 
@@ -77,7 +101,13 @@ function create_stream(
     # this probably won't collide, most callers should add identifying information though
     log_stream_name::AbstractString="julia-$(uuid4())",
 )
-    create_log_stream(config; logGroupName=log_group_name, logStreamName=log_stream_name)
+    aws_retry() do
+        create_log_stream(
+            config;
+            logGroupName=log_group_name,
+            logStreamName=log_stream_name,
+        )
+    end
     return String(log_stream_name)
 end
 
@@ -91,7 +121,13 @@ function delete_stream(
     log_group_name::AbstractString,
     log_stream_name::AbstractString,
 )
-    delete_log_stream(config; logGroupName=log_group_name, logStreamName=log_stream_name)
+    aws_retry() do
+        delete_log_stream(
+            config;
+            logGroupName=log_group_name,
+            logStreamName=log_stream_name,
+        )
+    end
     return nothing
 end
 
@@ -120,13 +156,15 @@ function new_sequence_token(
     log_group::AbstractString,
     log_stream::AbstractString,
 )::Union{String, Nothing}
-    response = @mock describe_log_streams(
-        config;
-        logGroupName=log_group,
-        logStreamNamePrefix=log_stream,
-        orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-        limit=1,                  # matching result
-    )
+    response = aws_retry() do
+        @mock describe_log_streams(
+            config;
+            logGroupName=log_group,
+            logStreamNamePrefix=log_stream,
+            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
+            limit=1,                  # matching result
+        )
+    end
 
     streams = response["logStreams"]
 
@@ -224,8 +262,8 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
 
     function retry_cond(s, e)
         if e isa AWSException
-            if 500 <= e.cause.status <= 504
-                debug(LOGGER, sprint(io -> showerror(io, e)))
+            if 500 <= e.cause.status <= 504 || e.code == "ThrottlingException"
+                debug(LOGGER, "CloudWatchLogs PutLogEvents encountered $(e.code); retrying")
                 return (s, true)
             elseif e.cause.status == 400 && e.code == "InvalidSequenceTokenException"
                 debug(LOGGER) do
@@ -238,16 +276,16 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
                 update_sequence_token!(stream)
 
                 return (s, true)
-            elseif e.cause.status == 400 && e.code == "ThrottlingException"
-                debug(LOGGER, sprint(io -> showerror(io, e)))
-                return (s, true)
             end
+        elseif e isa MbedException
+            debug(LOGGER, "CloudWatchLogs PutLogEvents encountered $e; retrying")
+            return (s, true)
         end
 
         return (s, false)
     end
 
-    f = retry(delays=AWS_DELAYS, check=retry_cond) do
+    f = retry(delays=PUTLOGEVENTS_DELAYS, check=retry_cond) do
         @mock _put_log_events(stream, events)
     end
 
