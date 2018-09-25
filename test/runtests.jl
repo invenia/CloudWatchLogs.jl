@@ -9,6 +9,7 @@ using AWSCore: AWSConfig, aws_config, AWSCredentials, AWSException
 import AWSSDK
 import AWSSDK.CloudFormation
 import AWSSDK.STS
+using Compat: findall
 using Compat.Dates
 using Compat.Printf
 using Compat.UUIDs
@@ -72,10 +73,10 @@ function stack_output(config::AWSConfig, stack_name::AbstractString)
 
     xml = EzXML.root(EzXML.parsexml(response))
     ns = EzXML.namespace(xml)
-    outputs_xml = find(xml, "//ns:Stacks/ns:member[1]/ns:Outputs/ns:member", ["ns"=>ns])
+    outputs_xml = findall("//ns:Stacks/ns:member[1]/ns:Outputs/ns:member", xml, ["ns"=>ns])
     for output_xml in outputs_xml
-        key = string(findfirst(output_xml, "//ns:OutputKey/text()", ["ns"=>ns]))
-        val = string(findfirst(output_xml, "//ns:OutputValue/text()", ["ns"=>ns]))
+        key = string(findfirst("//ns:OutputKey/text()", output_xml, ["ns"=>ns]))
+        val = string(findfirst("//ns:OutputValue/text()", output_xml, ["ns"=>ns]))
         outputs[key] = val
     end
 
