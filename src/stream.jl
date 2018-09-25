@@ -16,13 +16,7 @@ function aws_retry_cond(s, e)
     return (s, false)
 end
 
-function aws_retry(f)
-    wrapped = retry(delays=GENERIC_AWS_DELAYS, check=aws_retry_cond) do
-        f()
-    end
-
-    wrapped()
-end
+aws_retry(f) = retry(f, delays=GENERIC_AWS_DELAYS, check=aws_retry_cond)()
 
 struct CloudWatchLogStream
     config::AWSConfig
