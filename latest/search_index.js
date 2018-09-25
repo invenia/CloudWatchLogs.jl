@@ -97,11 +97,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "pages/api.html#CloudWatchLogs.create_group",
+    "page": "API",
+    "title": "CloudWatchLogs.create_group",
+    "category": "function",
+    "text": "create_group(config::AWSConfig) -> String\ncreate_group(config::AWSConfig, log_group_name) -> String\n\nCreate a CloudWatch Log Group. If the log group name is not provided, one is generated using a UUID4.\n\nReturns the log group name.\n\n\n\n"
+},
+
+{
     "location": "pages/api.html#CloudWatchLogs.create_stream",
     "page": "API",
     "title": "CloudWatchLogs.create_stream",
     "category": "function",
     "text": "create_stream(config::AWSConfig, log_group_name) -> String\ncreate_stream(config::AWSConfig, log_group_name, log_stream_name) -> String\n\nCreate a CloudWatch Log Stream under a given Log Group. If the log stream name is not provided, one is generated using a UUID4.\n\nReturns the log stream name.\n\n\n\n"
+},
+
+{
+    "location": "pages/api.html#CloudWatchLogs.delete_group-Tuple{Dict{Symbol,Any},AbstractString}",
+    "page": "API",
+    "title": "CloudWatchLogs.delete_group",
+    "category": "method",
+    "text": "delete_stream(config::AWSConfig, log_group_name)\n\nDelete a CloudWatch Log Group.\n\n\n\n"
 },
 
 {
