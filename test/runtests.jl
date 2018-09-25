@@ -4,6 +4,7 @@ Mocking.enable(; force=true)
 using CloudWatchLogs
 using Compat.Test
 
+import AWSCore
 using AWSCore: AWSConfig, aws_config, AWSCredentials, AWSException
 import AWSSDK
 import AWSSDK.CloudFormation
