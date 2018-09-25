@@ -61,12 +61,17 @@ function create_group(
     config::AWSConfig,
     # this probably won't collide, most callers should add identifying information though
     log_group_name::AbstractString="julia-$(uuid4())";
-    tags::AbstractDict{<:AbstractString, <:AbstractString}=Dict{String, String}()
+    tags::AbstractDict{<:AbstractString, <:AbstractString}=Dict{String, String}(),
 )
-    tags = Dict{String, String}(tags)
-
-    aws_retry() do
-        create_log_group(config; logGroupName=log_group_name, tags=tags)
+    if isempty(tags)
+        aws_retry() do
+            create_log_group(config; logGroupName=log_group_name)
+        end
+    else
+        tags = Dict{String, String}(tags)
+        aws_retry() do
+            create_log_group(config; logGroupName=log_group_name, tags=tags)
+        end
     end
     return String(log_group_name)
 end
