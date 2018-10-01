@@ -2,13 +2,7 @@ __precompile__()
 module CloudWatchLogs
 
 using AWSCore: AWSConfig, AWSException
-using AWSSDK.CloudWatchLogs:
-    describe_log_streams,
-    create_log_stream,
-    delete_log_stream,
-    create_log_group,
-    delete_log_group,
-    put_log_events
+using AWSCore.Services: logs
 using Compat: @__MODULE__, Nothing, AbstractDict
 using Compat.Dates
 using Compat.UUIDs
