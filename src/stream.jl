@@ -65,12 +65,12 @@ function create_group(
 )
     if isempty(tags)
         aws_retry() do
-            create_log_group(config; logGroupName=log_group_name)
+            logs(config, "CreateLogGroup"; logGroupName=log_group_name)
         end
     else
         tags = Dict{String, String}(tags)
         aws_retry() do
-            create_log_group(config; logGroupName=log_group_name, tags=tags)
+            logs(config, "CreateLogGroup"; logGroupName=log_group_name, tags=tags)
         end
     end
     return String(log_group_name)
@@ -86,7 +86,7 @@ function delete_group(
     log_group_name::AbstractString,
 )
     aws_retry() do
-        delete_log_group(config; logGroupName=log_group_name)
+        logs(config, "DeleteLogGroup"; logGroupName=log_group_name)
     end
     return nothing
 end
@@ -107,8 +107,9 @@ function create_stream(
     log_stream_name::AbstractString="julia-$(uuid4())",
 )
     aws_retry() do
-        create_log_stream(
-            config;
+        logs(
+            config,
+            "CreateLogStream";
             logGroupName=log_group_name,
             logStreamName=log_stream_name,
         )
@@ -127,8 +128,9 @@ function delete_stream(
     log_stream_name::AbstractString,
 )
     aws_retry() do
-        delete_log_stream(
-            config;
+        logs(
+            config,
+            "DeleteLogStream";
             logGroupName=log_group_name,
             logStreamName=log_stream_name,
         )
@@ -146,6 +148,8 @@ sequence_token(stream::CloudWatchLogStream) = stream.token[]
 function new_sequence_token(stream::CloudWatchLogStream)
     return new_sequence_token(stream.config, stream.log_group_name, stream.log_stream_name)
 end
+
+describe_log_streams(config; kwargs...) = logs(config, "DescribeLogStreams"; kwargs...)
 
 """
     new_sequence_token(stream::CloudWatchLogStream) -> Union{String, Nothing}
@@ -207,8 +211,9 @@ function update_sequence_token!(
 end
 
 function _put_log_events(stream::CloudWatchLogStream, events::AbstractVector{LogEvent})
-    put_log_events(
-        stream.config;
+    logs(
+        stream.config,
+        "PutLogEvents";
         logEvents=events,
         logGroupName=stream.log_group_name,
         logStreamName=stream.log_stream_name,

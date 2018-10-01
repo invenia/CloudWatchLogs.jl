@@ -5,10 +5,8 @@ using CloudWatchLogs
 using Compat.Test
 
 import AWSCore
+import AWSCore.Services: logs, sts
 using AWSCore: AWSConfig, aws_config, AWSCredentials, AWSException
-import AWSSDK
-import AWSSDK.CloudFormation
-import AWSSDK.STS
 using Compat: findall
 using Compat.Dates
 using Compat.Printf
@@ -18,13 +16,13 @@ using Memento
 using Memento.Test
 using TimeZones
 
-const CloudWatchLogsSDK = AWSSDK.CloudWatchLogs
 const LOGGER = getlogger(CloudWatchLogs)
 
 
 function assume_role(config::AWSConfig, role_arn::AbstractString; kwargs...)
-    response = STS.assume_role(
-        config;
+    response = sts(
+        config,
+        "AssumeRole";
         RoleArn=role_arn,
         RoleSessionName=session_name(),
         kwargs...

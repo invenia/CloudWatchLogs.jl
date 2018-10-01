@@ -39,8 +39,9 @@ end
         group_name = new_group("create_group")
         @test create_group(CFG, group_name; tags=Dict("Temporary"=>"true")) == group_name
 
-        response = CloudWatchLogsSDK.describe_log_groups(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogGroups";
             logGroupNamePrefix=group_name,
             limit=1,
         )
@@ -52,8 +53,9 @@ end
 
         delete_group(CFG, group_name)
 
-        response = CloudWatchLogsSDK.describe_log_groups(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogGroups";
             logGroupNamePrefix=group_name,
             limit=1,
         )
@@ -67,8 +69,9 @@ end
         group_name = new_group("create_group_no_tags")
         @test create_group(CFG, group_name) == group_name
 
-        response = CloudWatchLogsSDK.describe_log_groups(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogGroups";
             logGroupNamePrefix=group_name,
             limit=1,
         )
@@ -80,8 +83,9 @@ end
 
         delete_group(CFG, group_name)
 
-        response = CloudWatchLogsSDK.describe_log_groups(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogGroups";
             logGroupNamePrefix=group_name,
             limit=1,
         )
@@ -94,8 +98,9 @@ end
     @testset "Unnamed group" begin
         group_name = create_group(CFG; tags=Dict("Temporary"=>"true"))
 
-        response = CloudWatchLogsSDK.describe_log_groups(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogGroups";
             logGroupNamePrefix=group_name,
             limit=1,
         )
@@ -107,8 +112,9 @@ end
 
         delete_group(CFG, group_name)
 
-        response = CloudWatchLogsSDK.describe_log_groups(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogGroups";
             logGroupNamePrefix=group_name,
             limit=1,
         )
@@ -127,8 +133,9 @@ end
         stream_name = new_stream("create_stream")
         @test create_stream(CFG, TEST_LOG_GROUP, stream_name) == stream_name
 
-        response = CloudWatchLogsSDK.describe_log_streams(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogStreams";
             logGroupName=TEST_LOG_GROUP,
             logStreamNamePrefix=stream_name,
             orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
@@ -142,8 +149,9 @@ end
 
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
-        response = CloudWatchLogsSDK.describe_log_streams(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogStreams";
             logGroupName=TEST_LOG_GROUP,
             logStreamNamePrefix=stream_name,
             orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
@@ -158,8 +166,9 @@ end
     @testset "Unnamed stream" begin
         stream_name = create_stream(CFG, TEST_LOG_GROUP)
 
-        response = CloudWatchLogsSDK.describe_log_streams(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogStreams";
             logGroupName=TEST_LOG_GROUP,
             logStreamNamePrefix=stream_name,
             orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
@@ -173,8 +182,9 @@ end
 
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
-        response = CloudWatchLogsSDK.describe_log_streams(
-            CFG;
+        response = logs(
+            CFG,
+            "DescribeLogStreams";
             logGroupName=TEST_LOG_GROUP,
             logStreamNamePrefix=stream_name,
             orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
@@ -203,8 +213,9 @@ end
         @test submit_logs(stream, LogEvent.(["Second log", "Third log"])) == 2
 
         sleep(2)  # wait until AWS has injested the logs; this may or may not be enough
-        response = CloudWatchLogsSDK.get_log_events(
-            CFG;
+        response = logs(
+            CFG,
+            "GetLogEvents";
             logGroupName=TEST_LOG_GROUP,
             logStreamName=stream_name,
             startFromHead=true,
@@ -312,8 +323,9 @@ end
         end
 
         sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
-        response = CloudWatchLogsSDK.get_log_events(
-            CFG;
+        response = logs(
+            CFG,
+            "GetLogEvents";
             logGroupName=TEST_LOG_GROUP,
             logStreamName=stream_name,
             startFromHead=true,
@@ -411,8 +423,9 @@ end
         @test !isready(handler.channel)
 
         sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
-        response = CloudWatchLogsSDK.get_log_events(
-            CFG;
+        response = logs(
+            CFG,
+            "GetLogEvents";
             logGroupName=TEST_LOG_GROUP,
             logStreamName=stream_name,
             startFromHead=true,
@@ -459,8 +472,9 @@ end
 
         # wait for the logs to be submitted and for AWS to injest them
         sleep(10)
-        response = CloudWatchLogsSDK.get_log_events(
-            CFG;
+        response = logs(
+            CFG,
+            "GetLogEvents";
             logGroupName=TEST_LOG_GROUP,
             logStreamName=stream_name,
         )
@@ -471,8 +485,9 @@ end
             @test length(response["events"]) <= 4
             num_events_injested += length(response["events"])
 
-            response = CloudWatchLogsSDK.get_log_events(
-                CFG;
+            response = logs(
+                CFG,
+                "GetLogEvents";
                 logGroupName=TEST_LOG_GROUP,
                 logStreamName=stream_name,
                 nextToken=prev_token,
@@ -507,8 +522,9 @@ end
         end
 
         sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
-        response = CloudWatchLogsSDK.get_log_events(
-            CFG;
+        response = logs(
+            CFG,
+            "GetLogEvents";
             logGroupName=TEST_LOG_GROUP,
             logStreamName=stream_name,
             startFromHead=true,
@@ -520,8 +536,9 @@ end
         @test event["message"] == "1"
 
         sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
-        response = CloudWatchLogsSDK.get_log_events(
-            CFG;
+        response = logs(
+            CFG,
+            "GetLogEvents";
             logGroupName=TEST_LOG_GROUP,
             logStreamName=stream_name,
             startFromHead=false,
