@@ -1,4 +1,4 @@
-julia 0.6
+julia 0.7
 AWSCore 0.3
 Memento 0.9
 Mocking 0.5.3
