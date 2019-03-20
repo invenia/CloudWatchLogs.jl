@@ -3,13 +3,12 @@ module CloudWatchLogs
 
 using AWSCore: AWSConfig, AWSException
 using AWSCore.Services: logs
-using Compat: @__MODULE__, Nothing, AbstractDict
-using Compat.Dates
-using Compat.UUIDs
+using Dates
 using MbedTLS: MbedException
 using Memento
 using Mocking
 using TimeZones
+using UUIDs
 
 export CloudWatchLogStream, LogEvent, submit_log, submit_logs
 export create_group, delete_group, create_stream, delete_stream

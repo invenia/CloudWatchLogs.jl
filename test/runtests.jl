@@ -2,19 +2,18 @@ using Mocking
 Mocking.enable(; force=true)
 
 using CloudWatchLogs
-using Compat.Test
 
 import AWSCore
 import AWSCore.Services: logs, sts
 using AWSCore: AWSConfig, aws_config, AWSCredentials, AWSException
-using Compat: findall
-using Compat.Dates
-using Compat.Printf
-using Compat.UUIDs
+using Dates
 import EzXML
+using Printf
 using Memento
-using Memento.Test
+using Memento.TestUtils
+using Test
 using TimeZones
+using UUIDs
 
 const LOGGER = getlogger(CloudWatchLogs)
 

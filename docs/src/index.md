@@ -66,7 +66,7 @@ To add a handler with a unique stream to the root logger on each process:
 
 ```julia
 @everywhere using Memento
-@everywhere using Compat.UUIDs
+@everywhere using UUIDs
 @everywhere push!(getlogger("root"), CloudWatchLogHandler(aws_config(), "my-log-group", "my-log-stream-$(uuid1())"))
 ```
 
