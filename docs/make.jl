@@ -16,7 +16,7 @@ makedocs(;
         "assets/logo.png",
     ],
     strict = true,
-    checkdocs = :none,
+    checkdocs = :exports,
 )
 
 deploydocs(;
