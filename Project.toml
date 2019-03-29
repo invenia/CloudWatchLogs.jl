@@ -3,6 +3,7 @@ uuid = "c4c1e6a2-6bdd-52e0-b56d-1d4734724d2d"
 
 [deps]
 AWSCore = "4f1ea46c-232b-54a6-9b17-cc2d0f3e6598"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 MbedTLS = "739be429-bea8-5141-9913-cc70e7f3736d"
 Memento = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
 Mocking = "78c3b35d-d492-501b-9361-3d52fe80e533"
