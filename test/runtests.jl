@@ -7,7 +7,7 @@ import AWSCore
 import AWSCore.Services: logs, sts
 using AWSCore: AWSConfig, aws_config, AWSCredentials, AWSException
 using Dates
-import EzXML
+using EzXML
 using HTTP
 using Printf
 using Memento
