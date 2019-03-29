@@ -337,30 +337,6 @@ end
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
     end
 
-    @testset "Throttled" begin
-        start_time = CloudWatchLogs.unix_timestamp_ms()
-        stream_name = new_stream("throttled")
-        stream = CloudWatchLogStream(
-            CFG,
-            TEST_LOG_GROUP,
-            create_stream(CFG, TEST_LOG_GROUP, stream_name),
-        )
-
-        events = map(1:100) do i
-            LogEvent("log $i", start_time + i)
-        end
-
-        setlevel!(LOGGER, "debug") do
-            @test_log LOGGER "debug" "ThrottlingException" begin
-                for event in events
-                    submit_log(stream, event)
-                end
-            end
-        end
-
-        delete_stream(CFG, TEST_LOG_GROUP, stream_name)
-    end
-
     @testset "Rejected Logs" begin
         stream_name = new_stream("out_of_bounds")
         stream = CloudWatchLogStream(
