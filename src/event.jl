@@ -35,9 +35,13 @@ struct LogEvent
         end
 
         if sizeof(message) > MAX_EVENT_SIZE - 26
-            throw(ArgumentError(
-                "Log Event message cannot be more than than $MAX_EVENT_SIZE bytes"
-            ))
+            # Truncate message and throw a warning
+            idx = MAX_EVENT_SIZE - 29
+            # Truncated messages include a "..."
+            message = string(message[1:idx], "...")
+            warn(LOGGER) do
+                "Log Event message cannot be more than $MAX_EVENT_SIZE bytes: \n\t$message"
+            end
         end
 
         if timestamp < 0

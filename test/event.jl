@@ -26,7 +26,9 @@ end
 @testset "Bad construction" begin
     @test_throws ArgumentError LogEvent("")
     @test_throws ArgumentError LogEvent("Foo", -45)
-    @test_throws ArgumentError LogEvent("A" ^ (CloudWatchLogs.MAX_EVENT_SIZE - 25))
+    @test_warn getlogger("CloudWatchLogs") "Log Event message cannot be more than" begin
+        LogEvent("A" ^ (MAX_EVENT_SIZE - 25))
+    end
 end
 
 end
