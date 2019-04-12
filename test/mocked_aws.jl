@@ -21,6 +21,18 @@ function submit_patch(log_dump)
     end
 end
 
+function throttle_patch()
+    first_time = true
+    @patch function _put_log_events(stream::CloudWatchLogStream, events::AbstractVector{CloudWatchLogs.LogEvent})
+        if first_time
+            first_time = false
+            throw(AWSException("ThrottlingException", "", "", HTTP.ExceptionRequest.StatusError(400, "")))
+        end 
+        
+        return Dict()
+    end
+end
+            
 streams = [
     Dict(
         "storageBytes" => 1048576,
@@ -89,6 +101,20 @@ end
         @test messages == map(string, 'a':'e')
         @test issorted(timestamps)
     end
+end
+
+@testset "Throttled" begin
+    start_time = CloudWatchLogs.unix_timestamp_ms()
+    apply([dls_patch(Dict("logStreams" => streams)), throttle_patch()]) do
+        stream = CloudWatchLogStream(CFG, "my-log-group-1", "my-log-stream-1")
+        event = LogEvent("log", start_time)
+
+        setlevel!(LOGGER, "debug") do
+            @test_log LOGGER "debug" "ThrottlingException" begin
+                submit_log(stream, event)
+            end
+        end
+    end 
 end
 
 end

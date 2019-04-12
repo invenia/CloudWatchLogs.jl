@@ -2,7 +2,7 @@ using Documenter, CloudWatchLogs
 
 makedocs(;
     modules=[CloudWatchLogs],
-    format=:html,
+    format=Documenter.HTML(prettyurls=(get(ENV, "CI", nothing) == "true")),
     pages=[
         "Home" => "index.md",
         "API" => "pages/api.md",
@@ -15,12 +15,11 @@ makedocs(;
         "assets/invenia.css",
         "assets/logo.png",
     ],
+    strict = true,
+    checkdocs = :exports,
 )
 
 deploydocs(;
     repo="github.com/invenia/CloudWatchLogs.jl",
     target="build",
-    julia="0.6",
-    deps=nothing,
-    make=nothing,
 )
