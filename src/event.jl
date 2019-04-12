@@ -39,9 +39,7 @@ struct LogEvent
             idx = MAX_EVENT_SIZE - 29
             # Truncated messages include a "..."
             message = string(message[1:idx], "...")
-            warn(LOGGER) do
-                "Log Event message cannot be more than $MAX_EVENT_SIZE bytes: \n\t$message"
-            end
+            warn(LOGGER, "Log Event message cannot be more than $MAX_EVENT_SIZE bytes")
         end
 
         if timestamp < 0
