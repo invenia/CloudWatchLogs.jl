@@ -39,7 +39,7 @@ struct LogEvent
             idx = MAX_EVENT_SIZE - 29
             # Truncated messages include a "..."
             message = string(message[1:idx], "...")
-            warn(LOGGER, "Log Event message cannot be more than $MAX_EVENT_SIZE bytes")
+            warn(LOGGER, "CloudWatch Log Event message cannot be more than $MAX_EVENT_SIZE bytes")
         end
 
         if timestamp < 0
