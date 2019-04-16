@@ -2,6 +2,7 @@ using Mocking
 Mocking.enable(; force=true)
 
 using CloudWatchLogs
+using CloudWatchLogs: MAX_EVENT_SIZE
 
 import AWSCore
 import AWSCore.Services: logs, sts
