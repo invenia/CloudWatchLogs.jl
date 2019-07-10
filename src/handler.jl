@@ -110,7 +110,7 @@ function process_logs!(handler::CloudWatchLogHandler)
 end
 
 function Memento.emit(handler::CloudWatchLogHandler, record::Record)
-    dt = haskey(record, :date) ? record[:date] : Dates.now(tz"UTC")
+    dt = isdefined(record, :date) ? record.date : Dates.now(tz"UTC")
     message = format(handler.fmt, record)
     event = LogEvent(message, dt)
     put!(handler.channel, event)

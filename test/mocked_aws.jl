@@ -26,7 +26,9 @@ function throttle_patch()
     @patch function _put_log_events(stream::CloudWatchLogStream, events::AbstractVector{CloudWatchLogs.LogEvent})
         if first_time
             first_time = false
-            throw(AWSException("ThrottlingException", "", "", HTTP.ExceptionRequest.StatusError(400, "")))
+            response = HTTP.Messages.Response(400, "")
+            http_error = HTTP.ExceptionRequest.StatusError(400, "", "", response)
+            throw(AWSException("ThrottlingException", "", "", http_error))
         end 
         
         return Dict()
