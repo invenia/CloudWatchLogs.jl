@@ -45,7 +45,7 @@ function session_name()
     location = gethostname()
 
     name = "$user@$location"
-    ts = string(round(Int, time()))
+    ts = string(round(Int64, time()))
 
     # RoleSessionName must be no more than 64 characters
     max_name_length = 64 - length(ts) - 1

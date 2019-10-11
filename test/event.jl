@@ -1,7 +1,7 @@
 @testset "LogEvent" begin
 
 @testset "Timestamp" begin
-    time_in_ms = round(Int, time() * 1000)
+    time_in_ms = round(Int64, time() * 1000)
 
     event = LogEvent("Foo", time_in_ms)
     @test CloudWatchLogs.timestamp(event) == time_in_ms
