@@ -1,17 +1,17 @@
 """
-    unix_timestamp_ms(dt::Union{DateTime, ZonedDateTime}) -> Int
+    unix_timestamp_ms(dt::Union{DateTime, ZonedDateTime}) -> Int64
 
 Get a datetime's representation as a UNIX timestamp in milliseconds.
 `DateTime`s with no time zone are assumed to be in UTC.
 """
 function unix_timestamp_ms end
 
-unix_timestamp_ms(zdt::ZonedDateTime) = floor(Int, TimeZones.zdt2unix(zdt) * 1000)
+unix_timestamp_ms(zdt::ZonedDateTime) = floor(Int64, TimeZones.zdt2unix(zdt) * 1000)
 # assume UTC because you have to assume something
 unix_timestamp_ms(dt::DateTime) = unix_timestamp_ms(ZonedDateTime(dt, tz"UTC"))
 
 """
-    unix_timestamp_ms() -> Int
+    unix_timestamp_ms() -> Int64
 
 Get the current datetime's representation as a UNIX timestamp in milliseconds.
 """
@@ -25,7 +25,7 @@ Log event for submission to CloudWatch Logs.
 """
 struct LogEvent
     message::String
-    timestamp::Int
+    timestamp::Int64
 
     function LogEvent(message::AbstractString, timestamp::Real)
         message = String(message)

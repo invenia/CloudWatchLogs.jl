@@ -225,7 +225,7 @@ end
 
         @test length(response["events"]) == 3
         messages = map(response["events"]) do event
-            @test round(Int, event["timestamp"]) in time_range
+            @test round(Int64, event["timestamp"]) in time_range
             event["message"]
         end
 
@@ -411,7 +411,7 @@ end
 
         @test length(response["events"]) == 2
         messages = map(response["events"]) do event
-            @test round(Int, event["timestamp"]) in time_range
+            @test round(Int64, event["timestamp"]) in time_range
             event["message"]
         end
 
