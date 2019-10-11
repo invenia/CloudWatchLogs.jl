@@ -1,5 +1,5 @@
 using Mocking
-Mocking.enable(; force=true)
+Mocking.activate()
 
 using CloudWatchLogs
 using CloudWatchLogs: MAX_EVENT_SIZE
