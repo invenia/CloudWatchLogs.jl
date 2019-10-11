@@ -5,12 +5,12 @@
 CFG = AWSConfig()
 
 function dls_patch(output)
-    @patch function describe_log_streams(config; kwargs...)
+    @patch function CloudWatchLogs.describe_log_streams(config; kwargs...)
         output
     end
 end
 
-put_patch = @patch function _put_log_events(stream::CloudWatchLogStream, events::AbstractVector{CloudWatchLogs.LogEvent})
+put_patch = @patch function CloudWatchLogs._put_log_events(stream::CloudWatchLogStream, events::AbstractVector{CloudWatchLogs.LogEvent})
     return Dict("nextSequenceToken" => "3")
 end
 
@@ -23,18 +23,18 @@ end
 
 function throttle_patch()
     first_time = true
-    @patch function _put_log_events(stream::CloudWatchLogStream, events::AbstractVector{CloudWatchLogs.LogEvent})
+    @patch function CloudWatchLogs._put_log_events(stream::CloudWatchLogStream, events::AbstractVector{CloudWatchLogs.LogEvent})
         if first_time
             first_time = false
             response = HTTP.Messages.Response(400, "")
             http_error = HTTP.ExceptionRequest.StatusError(400, "", "", response)
             throw(AWSException("ThrottlingException", "", "", http_error))
-        end 
-        
+        end
+
         return Dict()
     end
 end
-            
+
 streams = [
     Dict(
         "storageBytes" => 1048576,
@@ -116,7 +116,7 @@ end
                 submit_log(stream, event)
             end
         end
-    end 
+    end
 end
 
 end
