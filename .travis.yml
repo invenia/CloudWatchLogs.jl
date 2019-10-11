@@ -5,7 +5,7 @@ os:
   - osx
 julia:
   - 1.0
-  - 1.1
+  - 1.2
   - nightly
 matrix:
   allow_failures:
@@ -17,6 +17,9 @@ after_success:
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
 jobs:
   include:
+    - os: linux
+      arch: x86
+      julia: 1.2
     - stage: "Documentation"
       julia: 1.0
       script:
