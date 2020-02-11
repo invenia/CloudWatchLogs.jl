@@ -1,4 +1,5 @@
 [deps]
+CloudWatchLogs = "c4c1e6a2-6bdd-52e0-b56d-1d4734724d2d"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 
 [compat]
