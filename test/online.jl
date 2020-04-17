@@ -322,7 +322,7 @@ end
             end
         end
 
-        sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
+        sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
         response = logs(
             CFG,
             "GetLogEvents";
