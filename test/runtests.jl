@@ -4,9 +4,8 @@ Mocking.activate()
 using CloudWatchLogs
 using CloudWatchLogs: MAX_EVENT_SIZE
 
-import AWSCore
-import AWSCore.Services: logs, sts
-using AWSCore: AWSConfig, aws_config, AWSCredentials, AWSException
+using AWS
+using AWS.AWSExceptions
 using Dates
 using EzXML
 using HTTP
@@ -17,16 +16,19 @@ using Test
 using TimeZones
 using UUIDs
 
+@service CloudFormation
+@service CloudWatch_Logs
+@service STS
+
 const LOGGER = getlogger(CloudWatchLogs)
 
 
 function assume_role(config::AWSConfig, role_arn::AbstractString; kwargs...)
-    response = sts(
-        config,
-        "AssumeRole";
-        RoleArn=role_arn,
-        RoleSessionName=session_name(),
-        kwargs...
+    response = STS.assume_role(
+        role_arn,
+        session_name(),
+        Dict(kwargs);
+        aws_config=config
     )
 
     response_creds = response["Credentials"]
@@ -60,14 +62,9 @@ end
 function stack_output(config::AWSConfig, stack_name::AbstractString)
     outputs = Dict{String, String}()
 
-    # https://github.com/JuliaCloud/AWSCore.jl/issues/41
-    response = AWSCore.service_query(
-        config;
-        service="cloudformation",
-        version="2010-05-15",
-        operation="DescribeStacks",
-        args=[:StackName=>stack_name],
-        return_raw=true,
+    response = CloudFormation.describe_stacks(
+        Dict("StackName" => stack_name);
+        aws_config=config
     )
 
     xml = EzXML.root(EzXML.parsexml(response))
