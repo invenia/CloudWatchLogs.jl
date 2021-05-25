@@ -1,6 +1,6 @@
 @testset "Online" begin
 
-CI_USER_CFG = aws_config()
+CI_USER_CFG = AWSConfig()
 # do not set this variable in CI; it should be versioned with the code
 # this is for locally overriding the stack used in testing
 TEST_STACK_NAME = get(ENV, "CLOUDWATCHLOGSJL_STACK_NAME", "CloudWatchLogs-jl-00015")
@@ -11,7 +11,7 @@ FORBIDDEN_GROUP_LOG_STREAM = "$TEST_RESOURCE_PREFIX-group-forbidden-stream"
 BAD_STREAM_LOG_GROUP = "$TEST_RESOURCE_PREFIX-group-badstream"
 FORBIDDEN_LOG_STREAM = "$TEST_RESOURCE_PREFIX-stream-forbidden"
 TEST_ROLE = stack_output(CI_USER_CFG, TEST_STACK_NAME)["LogTestRoleArn"]
-CFG = aws_config(creds=assume_role(CI_USER_CFG, TEST_ROLE; DurationSeconds=7200))
+CFG = AWSConfig(creds=assume_role(CI_USER_CFG, TEST_ROLE; DurationSeconds=7200))
 LOG_RUN_ID = uuid1()
 
 new_stream = let
@@ -34,17 +34,46 @@ new_group = let
     end
 end
 
+function _describe_log_groups(prefix; kwargs...)
+    return CloudWatch_Logs.describe_log_groups(
+        merge!(
+            Dict("logGroupNamePrefix" => prefix, "limit" => 1),
+            Dict(kwargs),
+        );
+        aws_config=CFG,
+    )
+end
+
+function _describe_log_streams(stream_name; kwargs...)
+    return CloudWatch_Logs.describe_log_streams(
+        TEST_LOG_GROUP,
+        merge!(
+            Dict(
+                "logStreamNamePrefix" => stream_name,
+                "orderBy" => "LogStreamName",  # orderBy and limit will ensure we get just
+                "limit" => 1,                  # the one matching result
+            ),
+            Dict(kwargs),
+        );
+        aws_config=CFG,
+    )
+end
+
+function _get_log_events(stream_name; kwargs...)
+    return CloudWatch_Logs.get_log_events(
+        TEST_LOG_GROUP,
+        stream_name,
+        Dict(kwargs);
+        aws_config=CFG,
+    )
+end
+
 @testset "Create/delete groups and streams" begin
     @testset "Named group" begin
         group_name = new_group("create_group")
         @test create_group(CFG, group_name; tags=Dict("Temporary"=>"true")) == group_name
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
-        )
+        response = _describe_log_groups(group_name)
 
         groups = response["logGroups"]
 
@@ -53,12 +82,7 @@ end
 
         delete_group(CFG, group_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
-        )
+        response = _describe_log_groups(group_name)
 
         groups = response["logGroups"]
 
@@ -69,12 +93,7 @@ end
         group_name = new_group("create_group_no_tags")
         @test create_group(CFG, group_name) == group_name
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
-        )
+        response = _describe_log_groups(group_name)
 
         groups = response["logGroups"]
 
@@ -83,12 +102,7 @@ end
 
         delete_group(CFG, group_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
-        )
+        response = _describe_log_groups(group_name)
 
         groups = response["logGroups"]
 
@@ -98,12 +112,7 @@ end
     @testset "Unnamed group" begin
         group_name = create_group(CFG; tags=Dict("Temporary"=>"true"))
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
-        )
+        response = _describe_log_groups(group_name)
 
         groups = response["logGroups"]
 
@@ -112,12 +121,7 @@ end
 
         delete_group(CFG, group_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
-        )
+        response = _describe_log_groups(group_name)
 
         groups = response["logGroups"]
 
@@ -133,14 +137,7 @@ end
         stream_name = new_stream("create_stream")
         @test create_stream(CFG, TEST_LOG_GROUP, stream_name) == stream_name
 
-        response = logs(
-            CFG,
-            "DescribeLogStreams";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamNamePrefix=stream_name,
-            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-            limit=1,                  # matching result
-        )
+        response = _describe_log_streams(stream_name)
 
         streams = response["logStreams"]
 
@@ -149,14 +146,7 @@ end
 
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogStreams";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamNamePrefix=stream_name,
-            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-            limit=1,                  # matching result
-        )
+        response = _describe_log_streams(stream_name)
 
         streams = response["logStreams"]
 
@@ -166,14 +156,7 @@ end
     @testset "Unnamed stream" begin
         stream_name = create_stream(CFG, TEST_LOG_GROUP)
 
-        response = logs(
-            CFG,
-            "DescribeLogStreams";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamNamePrefix=stream_name,
-            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-            limit=1,                  # matching result
-        )
+        response = _describe_log_streams(stream_name)
 
         streams = response["logStreams"]
 
@@ -182,14 +165,7 @@ end
 
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogStreams";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamNamePrefix=stream_name,
-            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-            limit=1,                  # matching result
-        )
+        response = _describe_log_streams(stream_name)
 
         streams = response["logStreams"]
 
@@ -213,13 +189,7 @@ end
         @test submit_logs(stream, LogEvent.(["Second log", "Third log"])) == 2
 
         sleep(2)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=true,
-        )
+        response = _get_log_events(stream_name; startFromHead=true)
 
         time_range = (start_time - 10):(CloudWatchLogs.unix_timestamp_ms() + 10)
 
@@ -323,13 +293,7 @@ end
         end
 
         sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=true,
-        )
+        response = _get_log_events(stream_name; startFromHead=true)
 
         @test length(response["events"]) == 3
         messages = [event["message"] for event in response["events"]]
@@ -399,13 +363,7 @@ end
         @test !isready(handler.channel)
 
         sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=true,
-        )
+        response = _get_log_events(stream_name; startFromHead=true)
 
         time_range = (start_time - 10):(CloudWatchLogs.unix_timestamp_ms() + 10)
 
@@ -448,12 +406,7 @@ end
 
         # wait for the logs to be submitted and for AWS to injest them
         sleep(10)
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-        )
+        response = _get_log_events(stream_name)
         prev_token = ""
         num_events_injested = 0
         while prev_token != response["nextBackwardToken"]
@@ -461,13 +414,7 @@ end
             @test length(response["events"]) <= 4
             num_events_injested += length(response["events"])
 
-            response = logs(
-                CFG,
-                "GetLogEvents";
-                logGroupName=TEST_LOG_GROUP,
-                logStreamName=stream_name,
-                nextToken=prev_token,
-            )
+            response = _get_log_events(stream_name; nextToken=prev_token)
         end
         @test num_events_injested == num_events
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
@@ -498,28 +445,14 @@ end
         end
 
         sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=true,
-            limit=1,
-        )
+        response = _get_log_events(stream_name; startFromHead=true, limit=1)
 
         @test length(response["events"]) == 1
         event = response["events"][1]
         @test event["message"] == "1"
 
         sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=false,
-            limit=1,
-        )
+        response = _get_log_events(stream_name; startFromHead=false, limit=1)
 
         @test length(response["events"]) == 1
         event = response["events"][1]
