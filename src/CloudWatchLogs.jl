@@ -1,8 +1,8 @@
 __precompile__()
 module CloudWatchLogs
 
-using AWSCore: AWSConfig, AWSException
-using AWSCore.Services: logs
+using AWS
+using AWS.AWSExceptions: AWSException
 using Dates
 using MbedTLS: MbedException
 using Memento
@@ -37,6 +37,8 @@ const PUTLOGEVENTS_DELAYS =
 const GENERIC_AWS_DELAYS = ExponentialBackOff(n=10, first_delay=0.2, factor=2, jitter=0.2)
 
 __init__() = Memento.register(LOGGER)
+
+@service CloudWatch_Logs
 
 include("exceptions.jl")
 include("event.jl")
