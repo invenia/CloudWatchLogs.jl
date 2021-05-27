@@ -1,6 +1,6 @@
 @testset "Online" begin
 
-CI_USER_CFG = aws_config()
+CI_USER_CFG = AWSConfig()
 # do not set this variable in CI; it should be versioned with the code
 # this is for locally overriding the stack used in testing
 TEST_STACK_NAME = get(ENV, "CLOUDWATCHLOGSJL_STACK_NAME", "CloudWatchLogs-jl-00015")
@@ -11,7 +11,7 @@ FORBIDDEN_GROUP_LOG_STREAM = "$TEST_RESOURCE_PREFIX-group-forbidden-stream"
 BAD_STREAM_LOG_GROUP = "$TEST_RESOURCE_PREFIX-group-badstream"
 FORBIDDEN_LOG_STREAM = "$TEST_RESOURCE_PREFIX-stream-forbidden"
 TEST_ROLE = stack_output(CI_USER_CFG, TEST_STACK_NAME)["LogTestRoleArn"]
-CFG = aws_config(creds=assume_role(CI_USER_CFG, TEST_ROLE; DurationSeconds=7200))
+CFG = AWSConfig(creds=assume_role(CI_USER_CFG, TEST_ROLE; DurationSeconds=7200))
 LOG_RUN_ID = uuid1()
 
 new_stream = let
