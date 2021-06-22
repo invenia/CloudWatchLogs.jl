@@ -14,6 +14,8 @@ TEST_ROLE = stack_output(CI_USER_CFG, TEST_STACK_NAME)["LogTestRoleArn"]
 CFG = aws_config(creds=assume_role(CI_USER_CFG, TEST_ROLE; DurationSeconds=7200))
 LOG_RUN_ID = uuid1()
 
+SLEEP_TIME = 10  # Wait time after creating an object and before getting a response
+
 new_stream = let
     counter = 1
 
@@ -39,6 +41,7 @@ end
         group_name = new_group("create_group")
         @test create_group(CFG, group_name; tags=Dict("Temporary"=>"true")) == group_name
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogGroups";
@@ -53,6 +56,7 @@ end
 
         delete_group(CFG, group_name)
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogGroups";
@@ -69,6 +73,7 @@ end
         group_name = new_group("create_group_no_tags")
         @test create_group(CFG, group_name) == group_name
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogGroups";
@@ -83,6 +88,7 @@ end
 
         delete_group(CFG, group_name)
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogGroups";
@@ -98,6 +104,7 @@ end
     @testset "Unnamed group" begin
         group_name = create_group(CFG; tags=Dict("Temporary"=>"true"))
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogGroups";
@@ -112,6 +119,7 @@ end
 
         delete_group(CFG, group_name)
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogGroups";
@@ -133,6 +141,7 @@ end
         stream_name = new_stream("create_stream")
         @test create_stream(CFG, TEST_LOG_GROUP, stream_name) == stream_name
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogStreams";
@@ -149,6 +158,7 @@ end
 
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogStreams";
@@ -166,6 +176,7 @@ end
     @testset "Unnamed stream" begin
         stream_name = create_stream(CFG, TEST_LOG_GROUP)
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogStreams";
@@ -182,6 +193,7 @@ end
 
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "DescribeLogStreams";
@@ -208,11 +220,12 @@ end
         stream_name = new_stream("stream_type")
         @test create_stream(CFG, TEST_LOG_GROUP, stream_name) == stream_name
 
+        sleep(SLEEP_TIME) # wait until AWS has injested the stream; this may or may not be enough
         stream = CloudWatchLogStream(CFG, TEST_LOG_GROUP, stream_name)
         @test submit_log(stream, LogEvent("Hello AWS")) == 1
         @test submit_logs(stream, LogEvent.(["Second log", "Third log"])) == 2
 
-        sleep(2)  # wait until AWS has injested the logs; this may or may not be enough
+        sleep(SLEEP_TIME)  # wait until AWS has injested the logs; this may or may not be enough
         response = logs(
             CFG,
             "GetLogEvents";
@@ -249,6 +262,7 @@ end
             create_stream(CFG, TEST_LOG_GROUP, new_stream("too_many_logs")),
         )
 
+        sleep(SLEEP_TIME)
         events = map(Iterators.take(Iterators.countfrom(start_time), 10001)) do ts
             LogEvent("A", ts)
         end
@@ -263,6 +277,7 @@ end
             create_stream(CFG, TEST_LOG_GROUP, new_stream("logs_too_big")),
         )
 
+        sleep(SLEEP_TIME)
         event_size = CloudWatchLogs.MAX_EVENT_SIZE - 26
         events = map(1:(div(CloudWatchLogs.MAX_BATCH_SIZE, event_size) + 1)) do i
             LogEvent("A" ^ event_size)
@@ -276,6 +291,8 @@ end
             TEST_LOG_GROUP,
             create_stream(CFG, TEST_LOG_GROUP, new_stream("logs_too_spread")),
         )
+
+        sleep(SLEEP_TIME)
 
         last_time = Dates.now(tz"UTC")
         first_time = last_time - Hour(25)
@@ -291,6 +308,8 @@ end
             TEST_LOG_GROUP,
             create_stream(CFG, TEST_LOG_GROUP, new_stream("invalid_token")),
         )
+
+        sleep(SLEEP_TIME)
 
         @test submit_log(stream, LogEvent("Foo")) == 1
         CloudWatchLogs.update_sequence_token!(stream, "oops_invalid")
@@ -309,6 +328,8 @@ end
             create_stream(CFG, TEST_LOG_GROUP, stream_name),
         )
 
+        sleep(SLEEP_TIME)
+
         current_time = Dates.now(tz"UTC")
         events = [
             LogEvent("First hey", current_time),
@@ -322,7 +343,7 @@ end
             end
         end
 
-        sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
+        sleep(SLEEP_TIME)  # wait until AWS has injested the logs; this may or may not be enough
         response = logs(
             CFG,
             "GetLogEvents";
@@ -344,6 +365,8 @@ end
             TEST_LOG_GROUP,
             create_stream(CFG, TEST_LOG_GROUP, stream_name),
         )
+
+        sleep(SLEEP_TIME)
 
         current_time = Dates.now(tz"UTC")
 
@@ -384,7 +407,7 @@ end
                     create_stream(CFG, TEST_LOG_GROUP, stream_name),
                     DefaultFormatter("{level} | {msg}"),
                 )
-                sleep(1)
+                sleep(SLEEP_TIME)
             end
 
             handler
@@ -395,10 +418,10 @@ end
         info(logger, "First log")
         warn(logger, "Second log")
 
-        sleep(1)   # wait for the handler to submit the logs
+        sleep(SLEEP_TIME)   # wait for the handler to submit the logs
         @test !isready(handler.channel)
 
-        sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
+        sleep(SLEEP_TIME)  # wait until AWS has injested the logs; this may or may not be enough
         response = logs(
             CFG,
             "GetLogEvents";
@@ -421,7 +444,7 @@ end
             # should cause the task to terminate with a debug message
             @test_log LOGGER "debug" "terminated normally" begin
                 close(handler.channel)
-                sleep(1)
+                sleep(SLEEP_TIME)
             end
         end
 
@@ -436,6 +459,9 @@ end
             create_stream(CFG, TEST_LOG_GROUP, stream_name),
             DefaultFormatter("{msg}"),
         )
+
+        sleep(SLEEP_TIME)
+
         logger = Logger("CWLHLive.Big"; propagate=false)
         push!(logger, handler)
 
@@ -447,7 +473,7 @@ end
         end
 
         # wait for the logs to be submitted and for AWS to injest them
-        sleep(10)
+        sleep(SLEEP_TIME)
         response = logs(
             CFG,
             "GetLogEvents";
@@ -482,6 +508,9 @@ end
             create_stream(CFG, TEST_LOG_GROUP, stream_name),
             DefaultFormatter("{msg}"),
         )
+
+        sleep(SLEEP_TIME)
+
         logger = Logger("CWLHLive.SoMany"; propagate=false)
         push!(logger, handler)
 
@@ -497,7 +526,7 @@ end
             sleep(delay)
         end
 
-        sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
+        sleep(SLEEP_TIME)  # wait until AWS has injested the logs; this may or may not be enough
         response = logs(
             CFG,
             "GetLogEvents";
@@ -511,7 +540,7 @@ end
         event = response["events"][1]
         @test event["message"] == "1"
 
-        sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
+        sleep(SLEEP_TIME)  # wait until AWS has injested the logs; this may or may not be enough
         response = logs(
             CFG,
             "GetLogEvents";
