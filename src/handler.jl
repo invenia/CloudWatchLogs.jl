@@ -1,6 +1,6 @@
 # Do not share a stream between processes
 # The token would be shared so putting would give InvalidSequenceTokenException a lot
-struct CloudWatchLogHandler{F<:Formatter} <: Handler{F, Union{}}
+struct CloudWatchLogHandler{F<:Formatter} <: Handler{F}
     stream::CloudWatchLogStream
     channel::Channel{LogEvent}  # only one task should read from this channel
     fmt::F

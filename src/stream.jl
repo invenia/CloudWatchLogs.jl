@@ -65,12 +65,12 @@ function create_group(
 )
     if isempty(tags)
         aws_retry() do
-            logs(config, "CreateLogGroup"; logGroupName=log_group_name)
+            CloudWatch_Logs.create_log_group(log_group_name; aws_config=config)
         end
     else
         tags = Dict{String, String}(tags)
         aws_retry() do
-            logs(config, "CreateLogGroup"; logGroupName=log_group_name, tags=tags)
+            CloudWatch_Logs.create_log_group(log_group_name, Dict("tags"=>tags); aws_config=config)
         end
     end
     return String(log_group_name)
@@ -86,7 +86,7 @@ function delete_group(
     log_group_name::AbstractString,
 )
     aws_retry() do
-        logs(config, "DeleteLogGroup"; logGroupName=log_group_name)
+        CloudWatch_Logs.delete_log_group(log_group_name; aws_config=config)
     end
     return nothing
 end
@@ -107,12 +107,7 @@ function create_stream(
     log_stream_name::AbstractString="julia-$(uuid4())",
 )
     aws_retry() do
-        logs(
-            config,
-            "CreateLogStream";
-            logGroupName=log_group_name,
-            logStreamName=log_stream_name,
-        )
+        CloudWatch_Logs.create_log_stream(log_group_name, log_stream_name; aws_config=config)
     end
     return String(log_stream_name)
 end
@@ -128,12 +123,7 @@ function delete_stream(
     log_stream_name::AbstractString,
 )
     aws_retry() do
-        logs(
-            config,
-            "DeleteLogStream";
-            logGroupName=log_group_name,
-            logStreamName=log_stream_name,
-        )
+        CloudWatch_Logs.delete_stream(log_group_name, log_stream_name; aws_config=config)
     end
     return nothing
 end
@@ -149,7 +139,7 @@ function new_sequence_token(stream::CloudWatchLogStream)
     return new_sequence_token(stream.config, stream.log_group_name, stream.log_stream_name)
 end
 
-describe_log_streams(config; kwargs...) = logs(config, "DescribeLogStreams"; kwargs...)
+describe_log_streams(config::AWSConfig, log_group_name::AbstractString; kwargs...) = CloudWatch_Logs.describe_log_streams(log_group_name, Dict(kwargs...); aws_config=config)
 
 """
     new_sequence_token(stream::CloudWatchLogStream) -> Union{String, Nothing}
@@ -167,8 +157,8 @@ function new_sequence_token(
 )::Union{String, Nothing}
     response = aws_retry() do
         @mock describe_log_streams(
-            config;
-            logGroupName=log_group,
+            config,
+            log_group;
             logStreamNamePrefix=log_stream,
             orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
             limit=1,                  # matching result
@@ -211,13 +201,12 @@ function update_sequence_token!(
 end
 
 function _put_log_events(stream::CloudWatchLogStream, events::AbstractVector{LogEvent})
-    logs(
-        stream.config,
-        "PutLogEvents";
-        logEvents=events,
-        logGroupName=stream.log_group_name,
-        logStreamName=stream.log_stream_name,
-        sequenceToken=sequence_token(stream),
+    CloudWatch_Logs._put_log_events(
+        events,
+        stream.log_group_name,
+        stream.log_stream_name,
+        Dict("sequenceToken" => sequence_token(stream));
+        aws_config=config
     )
 end
 
@@ -296,7 +285,7 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
     end
 
     f = retry(delays=PUTLOGEVENTS_DELAYS, check=retry_cond) do
-        @mock _put_log_events(stream, events)
+        @mock CloudWatchLogs._put_log_events(stream, events)
     end
 
     min_valid_event = 1

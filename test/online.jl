@@ -1,6 +1,6 @@
 @testset "Online" begin
 
-CI_USER_CFG = aws_config()
+CI_USER_CFG = global_aws_config()
 # do not set this variable in CI; it should be versioned with the code
 # this is for locally overriding the stack used in testing
 TEST_STACK_NAME = get(ENV, "CLOUDWATCHLOGSJL_STACK_NAME", "CloudWatchLogs-jl-00015")
