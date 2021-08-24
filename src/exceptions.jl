@@ -3,7 +3,7 @@ abstract type CloudWatchLogsException <: Exception end
 struct StreamNotFoundException <: CloudWatchLogsException
     stream::String
     group::String
-    msg::Union{String, Nothing}
+    msg::Union{String,Nothing}
 end
 
 function Base.showerror(io::IO, exception::StreamNotFoundException)

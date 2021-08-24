@@ -31,12 +31,10 @@ function CloudWatchLogHandler(
     log_group_name::AbstractString,
     log_stream_name::AbstractString,
     formatter::F=DefaultFormatter(),
-) where F<:Formatter
+) where {F<:Formatter}
     ch = Channel{LogEvent}(Inf)
     handler = CloudWatchLogHandler(
-        CloudWatchLogStream(config, log_group_name, log_stream_name),
-        ch,
-        formatter,
+        CloudWatchLogStream(config, log_group_name, log_stream_name), ch, formatter
     )
 
     tsk = @async process_logs!(handler)
@@ -62,10 +60,13 @@ function process_available_logs!(handler::CloudWatchLogHandler)
     end
 
     if isempty(events)
-        warn(LOGGER, string(
-            "Channel was ready but no events were found. ",
-            "Is there another task pulling logs from this handler?",
-        ))
+        warn(
+            LOGGER,
+            string(
+                "Channel was ready but no events were found. ",
+                "Is there another task pulling logs from this handler?",
+            ),
+        )
     end
 
     try
@@ -113,5 +114,5 @@ function Memento.emit(handler::CloudWatchLogHandler, record::Record)
     dt = isdefined(record, :date) ? record.date : Dates.now(tz"UTC")
     message = format(handler.fmt, record)
     event = LogEvent(message, dt)
-    put!(handler.channel, event)
+    return put!(handler.channel, event)
 end

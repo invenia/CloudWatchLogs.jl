@@ -23,18 +23,13 @@ const LOGGER = getlogger(CloudWatchLogs)
 @service STS
 
 function assume_role(config::AWSConfig, role_arn::AbstractString, params::AbstractDict)
-    response = STS.assume_role(
-        role_arn,
-        session_name(),
-        params;
-        aws_config=config
-    )
+    response = STS.assume_role(role_arn, session_name(), params; aws_config=config)
 
     response = response["AssumeRoleResult"]
     response_creds = response["Credentials"]
     response_user = response["AssumedRoleUser"]
 
-    AWSCredentials(
+    return AWSCredentials(
         response_creds["AccessKeyId"],
         response_creds["SecretAccessKey"],
         response_creds["SessionToken"],
@@ -53,18 +48,17 @@ function session_name()
     max_name_length = 64 - length(ts) - 1
 
     if length(name) > max_name_length
-        name = name[1:max_name_length-3] * "..."
+        name = name[1:(max_name_length - 3)] * "..."
     end
 
     return "$name-$ts"
 end
 
 function stack_output(config::AWSConfig, stack_name::AbstractString)
-    outputs = Dict{String, String}()
+    outputs = Dict{String,String}()
 
     response = CloudFormation.describe_stacks(
-        Dict("StackName" => stack_name);
-        aws_config=config
+        Dict("StackName" => stack_name); aws_config=config
     )
 
     response = response["DescribeStacksResult"]["Stacks"]["member"]["Outputs"]["member"]
@@ -80,7 +74,6 @@ function stack_output(config::AWSConfig, stack_name::AbstractString)
 
     return outputs
 end
-
 
 @testset "CloudWatchLogs.jl" begin
     include("event.jl")

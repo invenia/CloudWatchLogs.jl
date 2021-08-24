@@ -39,18 +39,21 @@ struct LogEvent
             idx = MAX_EVENT_SIZE - 29
             # Truncated messages include a "..."
             message = string(message[1:idx], "...")
-            warn(LOGGER, "CloudWatch Log Event message cannot be more than $MAX_EVENT_SIZE bytes")
+            warn(
+                LOGGER,
+                "CloudWatch Log Event message cannot be more than $MAX_EVENT_SIZE bytes",
+            )
         end
 
         if timestamp < 0
             throw(ArgumentError("Log Event timestamp must be non-negative"))
         end
 
-        new(message, timestamp)
+        return new(message, timestamp)
     end
 end
 
-function LogEvent(message::AbstractString, dt::Union{DateTime, ZonedDateTime})
+function LogEvent(message::AbstractString, dt::Union{DateTime,ZonedDateTime})
     return LogEvent(message, unix_timestamp_ms(dt))
 end
 

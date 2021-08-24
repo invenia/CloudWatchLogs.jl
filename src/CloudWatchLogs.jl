@@ -33,10 +33,11 @@ const MAX_BATCH_LENGTH = 10000
 
 # 5 requests per second per log stream. This limit cannot be changed.
 const PUTLOGEVENTS_RATE_LIMIT = 0.2
-const PUTLOGEVENTS_DELAYS =
-    ExponentialBackOff(n=10, first_delay=PUTLOGEVENTS_RATE_LIMIT, factor=1.1)
+const PUTLOGEVENTS_DELAYS = ExponentialBackOff(;
+    n=10, first_delay=PUTLOGEVENTS_RATE_LIMIT, factor=1.1
+)
 
-const GENERIC_AWS_DELAYS = ExponentialBackOff(n=10, first_delay=0.2, factor=2, jitter=0.2)
+const GENERIC_AWS_DELAYS = ExponentialBackOff(; n=10, first_delay=0.2, factor=2, jitter=0.2)
 
 __init__() = Memento.register(LOGGER)
 
