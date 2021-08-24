@@ -1,8 +1,8 @@
 __precompile__()
 module CloudWatchLogs
 
-using AWSCore: AWSConfig, AWSException
-using AWSCore.Services: logs
+using AWS
+using AWS: AWSException
 using Dates
 using MbedTLS: MbedException
 using Memento
@@ -10,8 +10,10 @@ using Mocking
 using TimeZones
 using UUIDs
 
+@service CloudWatch_Logs
+
 export CloudWatchLogStream, LogEvent, submit_log, submit_logs
-export create_group, delete_group, create_stream, delete_stream
+export create_group, delete_group, create_stream, delete_stream, describe_log_streams
 export CloudWatchLogHandler
 export StreamNotFoundException, LogSubmissionException
 

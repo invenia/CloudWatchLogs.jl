@@ -5,7 +5,7 @@
 CFG = AWSConfig()
 
 function dls_patch(output)
-    @patch function CloudWatchLogs.describe_log_streams(config; kwargs...)
+    @patch function CloudWatchLogs.describe_log_streams(config, log_group_name, params)
         output
     end
 end

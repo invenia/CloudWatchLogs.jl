@@ -1,6 +1,6 @@
 @testset "Online" begin
 
-CI_USER_CFG = aws_config()
+CI_USER_CFG = global_aws_config()
 # do not set this variable in CI; it should be versioned with the code
 # this is for locally overriding the stack used in testing
 TEST_STACK_NAME = get(ENV, "CLOUDWATCHLOGSJL_STACK_NAME", "CloudWatchLogs-jl-00015")
@@ -11,7 +11,9 @@ FORBIDDEN_GROUP_LOG_STREAM = "$TEST_RESOURCE_PREFIX-group-forbidden-stream"
 BAD_STREAM_LOG_GROUP = "$TEST_RESOURCE_PREFIX-group-badstream"
 FORBIDDEN_LOG_STREAM = "$TEST_RESOURCE_PREFIX-stream-forbidden"
 TEST_ROLE = stack_output(CI_USER_CFG, TEST_STACK_NAME)["LogTestRoleArn"]
-CFG = aws_config(creds=assume_role(CI_USER_CFG, TEST_ROLE; DurationSeconds=7200))
+
+# This sets the global AWSConfig to what is passed in
+CFG = global_aws_config(creds=assume_role(CI_USER_CFG, TEST_ROLE, Dict("DurationSeconds"=>"7200")))
 LOG_RUN_ID = uuid1()
 
 new_stream = let
@@ -39,13 +41,9 @@ end
         group_name = new_group("create_group")
         @test create_group(CFG, group_name; tags=Dict("Temporary"=>"true")) == group_name
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
+        response = CloudWatch_Logs.describe_log_groups(
+            Dict("logGroupNamePrefix" => group_name, "limit" => 1)
         )
-
         groups = response["logGroups"]
 
         @test !isempty(groups)
@@ -53,13 +51,9 @@ end
 
         delete_group(CFG, group_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
+        response = CloudWatch_Logs.describe_log_groups(
+            Dict("logGroupNamePrefix" => group_name, "limit" => 1)
         )
-
         groups = response["logGroups"]
 
         @test isempty(groups) || groups[1]["logGroupName"] != group_name
@@ -69,13 +63,9 @@ end
         group_name = new_group("create_group_no_tags")
         @test create_group(CFG, group_name) == group_name
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
+        response = CloudWatch_Logs.describe_log_groups(
+            Dict("logGroupNamePrefix" => group_name, "limit" => 1)
         )
-
         groups = response["logGroups"]
 
         @test !isempty(groups)
@@ -83,13 +73,9 @@ end
 
         delete_group(CFG, group_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
+        response = CloudWatch_Logs.describe_log_groups(
+            Dict("logGroupNamePrefix" => group_name, "limit" => 1)
         )
-
         groups = response["logGroups"]
 
         @test isempty(groups) || groups[1]["logGroupName"] != group_name
@@ -98,13 +84,9 @@ end
     @testset "Unnamed group" begin
         group_name = create_group(CFG; tags=Dict("Temporary"=>"true"))
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
+        response = CloudWatch_Logs.describe_log_groups(
+            Dict("logGroupNamePrefix" => group_name, "limit" => 1)
         )
-
         groups = response["logGroups"]
 
         @test !isempty(groups)
@@ -112,13 +94,9 @@ end
 
         delete_group(CFG, group_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogGroups";
-            logGroupNamePrefix=group_name,
-            limit=1,
+        response = CloudWatch_Logs.describe_log_groups(
+            Dict("logGroupNamePrefix" => group_name, "limit" => 1)
         )
-
         groups = response["logGroups"]
 
         @test isempty(groups) || groups[1]["logGroupName"] != group_name
@@ -133,15 +111,13 @@ end
         stream_name = new_stream("create_stream")
         @test create_stream(CFG, TEST_LOG_GROUP, stream_name) == stream_name
 
-        response = logs(
-            CFG,
-            "DescribeLogStreams";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamNamePrefix=stream_name,
-            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-            limit=1,                  # matching result
+        response = CloudWatch_Logs.describe_log_streams(
+            TEST_LOG_GROUP,
+            Dict(
+                "logStreamNamePrefix" => stream_name,
+                "limit" => 1,
+                "orderBy" => "LogStreamName"),
         )
-
         streams = response["logStreams"]
 
         @test !isempty(streams)
@@ -149,15 +125,13 @@ end
 
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogStreams";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamNamePrefix=stream_name,
-            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-            limit=1,                  # matching result
+        response = CloudWatch_Logs.describe_log_streams(
+            TEST_LOG_GROUP,
+            Dict(
+                "logStreamNamePrefix" => stream_name,
+                "limit" => 1,
+                "orderBy" => "LogStreamName"),
         )
-
         streams = response["logStreams"]
 
         @test isempty(streams) || streams[1]["logStreamName"] != stream_name
@@ -166,15 +140,13 @@ end
     @testset "Unnamed stream" begin
         stream_name = create_stream(CFG, TEST_LOG_GROUP)
 
-        response = logs(
-            CFG,
-            "DescribeLogStreams";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamNamePrefix=stream_name,
-            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-            limit=1,                  # matching result
+        response = CloudWatch_Logs.describe_log_streams(
+            TEST_LOG_GROUP,
+            Dict(
+                "logStreamNamePrefix" => stream_name,
+                "limit" => 1,
+                "orderBy" => "LogStreamName"),
         )
-
         streams = response["logStreams"]
 
         @test !isempty(streams)
@@ -182,15 +154,13 @@ end
 
         delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
-        response = logs(
-            CFG,
-            "DescribeLogStreams";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamNamePrefix=stream_name,
-            orderBy="LogStreamName",  # orderBy and limit will ensure we get just the one
-            limit=1,                  # matching result
+        response = CloudWatch_Logs.describe_log_streams(
+            TEST_LOG_GROUP,
+            Dict(
+                "logStreamNamePrefix" => stream_name,
+                "limit" => 1,
+                "orderBy" => "LogStreamName"),
         )
-
         streams = response["logStreams"]
 
         @test isempty(streams) || streams[1]["logStreamName"] != stream_name
@@ -213,12 +183,8 @@ end
         @test submit_logs(stream, LogEvent.(["Second log", "Third log"])) == 2
 
         sleep(2)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=true,
+        response = CloudWatch_Logs.get_log_events(
+            TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true)
         )
 
         time_range = (start_time - 10):(CloudWatchLogs.unix_timestamp_ms() + 10)
@@ -323,12 +289,8 @@ end
         end
 
         sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=true,
+        response = CloudWatch_Logs.get_log_events(
+            TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true)
         )
 
         @test length(response["events"]) == 3
@@ -399,12 +361,8 @@ end
         @test !isready(handler.channel)
 
         sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=true,
+        response = CloudWatch_Logs.get_log_events(
+            TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true)
         )
 
         time_range = (start_time - 10):(CloudWatchLogs.unix_timestamp_ms() + 10)
@@ -448,12 +406,7 @@ end
 
         # wait for the logs to be submitted and for AWS to injest them
         sleep(10)
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-        )
+        response = CloudWatch_Logs.get_log_events(TEST_LOG_GROUP, stream_name)
         prev_token = ""
         num_events_injested = 0
         while prev_token != response["nextBackwardToken"]
@@ -461,12 +414,8 @@ end
             @test length(response["events"]) <= 4
             num_events_injested += length(response["events"])
 
-            response = logs(
-                CFG,
-                "GetLogEvents";
-                logGroupName=TEST_LOG_GROUP,
-                logStreamName=stream_name,
-                nextToken=prev_token,
+            response = CloudWatch_Logs.get_log_events(
+                TEST_LOG_GROUP, stream_name, Dict("nextToken" => prev_token)
             )
         end
         @test num_events_injested == num_events
@@ -498,13 +447,8 @@ end
         end
 
         sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=true,
-            limit=1,
+        response = CloudWatch_Logs.get_log_events(
+            TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true, "limit" => 1)
         )
 
         @test length(response["events"]) == 1
@@ -512,13 +456,8 @@ end
         @test event["message"] == "1"
 
         sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
-        response = logs(
-            CFG,
-            "GetLogEvents";
-            logGroupName=TEST_LOG_GROUP,
-            logStreamName=stream_name,
-            startFromHead=false,
-            limit=1,
+        response = CloudWatch_Logs.get_log_events(
+            TEST_LOG_GROUP, stream_name, Dict("startFromHead" => false, "limit" => 1)
         )
 
         @test length(response["events"]) == 1

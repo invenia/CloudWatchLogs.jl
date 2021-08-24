@@ -1,34 +1,36 @@
-using Mocking
-Mocking.activate()
-
 using CloudWatchLogs
 using CloudWatchLogs: MAX_EVENT_SIZE
 
-import AWSCore
-import AWSCore.Services: logs, sts
-using AWSCore: AWSConfig, aws_config, AWSCredentials, AWSException
+using AWS
+using AWS: AWSException
 using Dates
 using EzXML
 using HTTP
 using Printf
 using Memento
 using Memento.TestUtils
+using Mocking
 using Test
 using TimeZones
 using UUIDs
 
+Mocking.activate()
+
 const LOGGER = getlogger(CloudWatchLogs)
 
+@service CloudFormation
+@service CloudWatch_Logs
+@service STS
 
-function assume_role(config::AWSConfig, role_arn::AbstractString; kwargs...)
-    response = sts(
-        config,
-        "AssumeRole";
-        RoleArn=role_arn,
-        RoleSessionName=session_name(),
-        kwargs...
+function assume_role(config::AWSConfig, role_arn::AbstractString, params::AbstractDict)
+    response = STS.assume_role(
+        role_arn,
+        session_name(),
+        params;
+        aws_config=config
     )
 
+    response = response["AssumeRoleResult"]
     response_creds = response["Credentials"]
     response_user = response["AssumedRoleUser"]
 
@@ -60,23 +62,20 @@ end
 function stack_output(config::AWSConfig, stack_name::AbstractString)
     outputs = Dict{String, String}()
 
-    # https://github.com/JuliaCloud/AWSCore.jl/issues/41
-    response = AWSCore.service_query(
-        config;
-        service="cloudformation",
-        version="2010-05-15",
-        operation="DescribeStacks",
-        args=[:StackName=>stack_name],
-        return_raw=true,
+    response = CloudFormation.describe_stacks(
+        Dict("StackName" => stack_name);
+        aws_config=config
     )
 
-    xml = EzXML.root(EzXML.parsexml(response))
-    ns = EzXML.namespace(xml)
-    outputs_xml = findall("//ns:Stacks/ns:member[1]/ns:Outputs/ns:member", xml, ["ns"=>ns])
-    for output_xml in outputs_xml
-        key = string(findfirst("//ns:OutputKey/text()", output_xml, ["ns"=>ns]))
-        val = string(findfirst("//ns:OutputValue/text()", output_xml, ["ns"=>ns]))
-        outputs[key] = val
+    response = response["DescribeStacksResult"]["Stacks"]["member"]["Outputs"]["member"]
+
+    # If there's only a single output value
+    if response isa AbstractDict
+        response = [response]
+    end
+
+    for entry in response
+        outputs[entry["OutputKey"]] = entry["OutputValue"]
     end
 
     return outputs
