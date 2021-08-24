@@ -1,8 +1,4 @@
-const RETRYABLE_CODES = (
-    "IncompleteSignature",
-    "ThrottlingException",
-    "RequestExpired",
-)
+const RETRYABLE_CODES = ("IncompleteSignature", "ThrottlingException", "RequestExpired")
 
 function aws_retry_cond(s, e)
     if e isa AWSException && (500 <= e.cause.status <= 504 || e.code in RETRYABLE_CODES)
@@ -16,13 +12,13 @@ function aws_retry_cond(s, e)
     return (s, false)
 end
 
-aws_retry(f) = retry(f, delays=GENERIC_AWS_DELAYS, check=aws_retry_cond)()
+aws_retry(f) = retry(f; delays=GENERIC_AWS_DELAYS, check=aws_retry_cond)()
 
 struct CloudWatchLogStream
     config::AWSConfig
     log_group_name::String
     log_stream_name::String
-    token::Ref{Union{String, Nothing}}
+    token::Ref{Union{String,Nothing}}
 end
 
 """
@@ -34,15 +30,10 @@ This constructor will automatically fetch the latest [sequence token](https://do
 for the stream.
 """
 function CloudWatchLogStream(
-    config::AWSConfig,
-    log_group_name::AbstractString,
-    log_stream_name::AbstractString,
+    config::AWSConfig, log_group_name::AbstractString, log_stream_name::AbstractString
 )
     stream = CloudWatchLogStream(
-        config,
-        log_group_name,
-        log_stream_name,
-        Ref{Union{String, Nothing}}(),
+        config, log_group_name, log_stream_name, Ref{Union{String,Nothing}}()
     )
     update_sequence_token!(stream)
     return stream
@@ -61,16 +52,18 @@ function create_group(
     config::AWSConfig,
     # this probably won't collide, most callers should add identifying information though
     log_group_name::AbstractString="julia-$(uuid4())";
-    tags::AbstractDict{<:AbstractString, <:AbstractString}=Dict{String, String}(),
+    tags::AbstractDict{<:AbstractString,<:AbstractString}=Dict{String,String}(),
 )
     if isempty(tags)
         aws_retry() do
             CloudWatch_Logs.create_log_group(log_group_name; aws_config=config)
         end
     else
-        tags = Dict{String, String}(tags)
+        tags = Dict{String,String}(tags)
         aws_retry() do
-            CloudWatch_Logs.create_log_group(log_group_name, Dict("tags"=>tags); aws_config=config)
+            CloudWatch_Logs.create_log_group(
+                log_group_name, Dict("tags" => tags); aws_config=config
+            )
         end
     end
     return String(log_group_name)
@@ -81,10 +74,7 @@ end
 
 Delete a CloudWatch Log Group.
 """
-function delete_group(
-    config::AWSConfig,
-    log_group_name::AbstractString,
-)
+function delete_group(config::AWSConfig, log_group_name::AbstractString)
     aws_retry() do
         CloudWatch_Logs.delete_log_group(log_group_name; aws_config=config)
     end
@@ -107,7 +97,9 @@ function create_stream(
     log_stream_name::AbstractString="julia-$(uuid4())",
 )
     aws_retry() do
-        CloudWatch_Logs.create_log_stream(log_group_name, log_stream_name; aws_config=config)
+        CloudWatch_Logs.create_log_stream(
+            log_group_name, log_stream_name; aws_config=config
+        )
     end
     return String(log_stream_name)
 end
@@ -118,12 +110,12 @@ end
 Delete a CloudWatch Log Stream from a given Log Group.
 """
 function delete_stream(
-    config::AWSConfig,
-    log_group_name::AbstractString,
-    log_stream_name::AbstractString,
+    config::AWSConfig, log_group_name::AbstractString, log_stream_name::AbstractString
 )
     aws_retry() do
-        CloudWatch_Logs.delete_log_stream(log_group_name, log_stream_name; aws_config=config)
+        CloudWatch_Logs.delete_log_stream(
+            log_group_name, log_stream_name; aws_config=config
+        )
     end
     return nothing
 end
@@ -139,7 +131,11 @@ function new_sequence_token(stream::CloudWatchLogStream)
     return new_sequence_token(stream.config, stream.log_group_name, stream.log_stream_name)
 end
 
-describe_log_streams(config::AWSConfig, log_group_name::AbstractString, params::AbstractDict) = CloudWatch_Logs.describe_log_streams(log_group_name, params; aws_config=config)
+function describe_log_streams(
+    config::AWSConfig, log_group_name::AbstractString, params::AbstractDict
+)
+    return CloudWatch_Logs.describe_log_streams(log_group_name, params; aws_config=config)
+end
 
 """
     new_sequence_token(stream::CloudWatchLogStream) -> Union{String, Nothing}
@@ -151,10 +147,8 @@ Returns `nothing` if the stream does not have a sequence token yet (e.g., if no 
 been logged).
 """
 function new_sequence_token(
-    config::AWSConfig,
-    log_group::AbstractString,
-    log_stream::AbstractString,
-)::Union{String, Nothing}
+    config::AWSConfig, log_group::AbstractString, log_stream::AbstractString
+)::Union{String,Nothing}
     response = aws_retry() do
         @mock describe_log_streams(
             config,
@@ -196,19 +190,18 @@ Alternatively, set the token for the stream to `token`.
 Returns the token.
 """
 function update_sequence_token!(
-    stream::CloudWatchLogStream,
-    token::Union{String, Nothing}=new_sequence_token(stream),
+    stream::CloudWatchLogStream, token::Union{String,Nothing}=new_sequence_token(stream)
 )
-    stream.token[] = token
+    return stream.token[] = token
 end
 
 function _put_log_events(stream::CloudWatchLogStream, events::AbstractVector{LogEvent})
-    CloudWatch_Logs.put_log_events(
+    return CloudWatch_Logs.put_log_events(
         events,
         stream.log_group_name,
         stream.log_stream_name,
         Dict("sequenceToken" => sequence_token(stream));
-        aws_config=stream.config
+        aws_config=stream.config,
     )
 end
 
@@ -232,23 +225,27 @@ Returns the number of events successfully submitted.
 """
 function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEvent})
     if length(events) > MAX_BATCH_LENGTH
-        error(LOGGER, LogSubmissionException(
-            "Log batch length exceeded 10000 events; submit fewer log events at once"
-        ))
+        error(
+            LOGGER,
+            LogSubmissionException(
+                "Log batch length exceeded 10000 events; submit fewer log events at once"
+            ),
+        )
     end
 
     batch_size = sum(aws_size, events)
 
     if batch_size > MAX_BATCH_SIZE
-        error(LOGGER, LogSubmissionException(
-            "Log batch size exceeded 1 MiB; submit fewer log events at once"
-        ))
+        error(
+            LOGGER,
+            LogSubmissionException(
+                "Log batch size exceeded 1 MiB; submit fewer log events at once"
+            ),
+        )
     end
 
     if !issorted(events; by=timestamp)
-        debug(LOGGER,
-            "Log submission will be faster if log events are sorted by timestamp"
-        )
+        debug(LOGGER, "Log submission will be faster if log events are sorted by timestamp")
 
         # a stable sort to avoid putting related messages out of order
         sort!(events; alg=MergeSort, by=timestamp)
@@ -256,9 +253,12 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
 
     min_timestamp, max_timestamp = extrema(timestamp(e) for e in events)
     if max_timestamp - min_timestamp > 24 * 3600 * 1000  # 24 hours in milliseconds
-        error(LOGGER, LogSubmissionException(
-            "Log events cannot span more than 24 hours; submit log events separately"
-        ))
+        error(
+            LOGGER,
+            LogSubmissionException(
+                "Log events cannot span more than 24 hours; submit log events separately"
+            ),
+        )
     end
 
     function retry_cond(s, e)
@@ -286,7 +286,7 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
         return (s, false)
     end
 
-    f = retry(delays=PUTLOGEVENTS_DELAYS, check=retry_cond) do
+    f = retry(; delays=PUTLOGEVENTS_DELAYS, check=retry_cond) do
         @mock CloudWatchLogs._put_log_events(stream, events)
     end
 
@@ -310,7 +310,7 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
                 string(
                     "Cannot log the following events, ",
                     "as they are older than the log retention policy allows: ",
-                    events[1:idx-1],
+                    events[1:(idx - 1)],
                 )
             end
         end
@@ -323,7 +323,7 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
                 string(
                     "Cannot log the following events, ",
                     "as they are more than 14 days old: ",
-                    events[1:idx-1],
+                    events[1:(idx - 1)],
                 )
             end
         end
@@ -336,7 +336,7 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
                 string(
                     "Cannot log the following events, ",
                     "as they are newer than 2 hours in the future: ",
-                    events[idx+1:end],
+                    events[(idx + 1):end],
                 )
             end
         end
