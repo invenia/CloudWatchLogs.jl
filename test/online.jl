@@ -452,7 +452,7 @@
                 sleep(delay)
             end
 
-            sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
+            sleep(10)  # wait until AWS has injested the logs; this may or may not be enough
             response = CloudWatch_Logs.get_log_events(
                 TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true, "limit" => 1)
             )
