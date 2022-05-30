@@ -54,16 +54,22 @@ function create_group(
     log_group_name::AbstractString="julia-$(uuid4())";
     tags::AbstractDict{<:AbstractString,<:AbstractString}=Dict{String,String}(),
 )
-    if isempty(tags)
-        aws_retry() do
-            CloudWatch_Logs.create_log_group(log_group_name; aws_config=config)
+    try
+        if isempty(tags)
+            aws_retry() do
+                CloudWatch_Logs.create_log_group(log_group_name; aws_config=config)
+            end
+        else
+            tags = Dict{String,String}(tags)
+            aws_retry() do
+                CloudWatch_Logs.create_log_group(
+                    log_group_name, Dict("tags" => tags); aws_config=config
+                )
+            end
         end
-    else
-        tags = Dict{String,String}(tags)
-        aws_retry() do
-            CloudWatch_Logs.create_log_group(
-                log_group_name, Dict("tags" => tags); aws_config=config
-            )
+    catch e
+        if e isa AWSException && e.cause.status != 400 && e.code != "ResourceAlreadyExistsException"
+            rethrow(e)
         end
     end
     return String(log_group_name)
@@ -96,10 +102,16 @@ function create_stream(
     # this probably won't collide, most callers should add identifying information though
     log_stream_name::AbstractString="julia-$(uuid4())",
 )
-    aws_retry() do
-        CloudWatch_Logs.create_log_stream(
-            log_group_name, log_stream_name; aws_config=config
-        )
+    try
+        aws_retry() do
+            CloudWatch_Logs.create_log_stream(
+                log_group_name, log_stream_name; aws_config=config
+            )
+        end
+    catch e
+        if e isa AWSException && e.cause.status != 400 && e.code != "ResourceAlreadyExistsException"
+            rethrow(e)
+        end
     end
     return String(log_stream_name)
 end
@@ -266,7 +278,7 @@ function submit_logs(stream::CloudWatchLogStream, events::AbstractVector{LogEven
             if 500 <= e.cause.status <= 504 || e.code == "ThrottlingException"
                 debug(LOGGER, "CloudWatchLogs PutLogEvents encountered $(e.code); retrying")
                 return (s, true)
-            elseif e.cause.status == 400 && e.code == "InvalidSequenceTokenException"
+            elseif (e.cause.status == 400 && e.code == "InvalidSequenceTokenException") || (e.cause.status == 400 && e.code == "DataAlreadyAcceptedException")
                 debug(LOGGER) do
                     string(
                         "CloudWatchLogStream encountered InvalidSequenceTokenException. ",
