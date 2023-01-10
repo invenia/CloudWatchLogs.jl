@@ -263,21 +263,23 @@
             @test_throws LOGGER LogSubmissionException submit_logs(stream, events)
         end
 
-        @testset "Invalid sequence token" begin
-            stream = CloudWatchLogStream(
-                CFG,
-                TEST_LOG_GROUP,
-                create_stream(CFG, TEST_LOG_GROUP, new_stream("invalid_token")),
-            )
+        # InvalidSequenceToken errors are no longer a thing:
+        #  - https://github.com/invenia/CloudWatchLogs.jl/issues/45
+        # @testset "Invalid sequence token" begin
+        #     stream = CloudWatchLogStream(
+        #         CFG,
+        #         TEST_LOG_GROUP,
+        #         create_stream(CFG, TEST_LOG_GROUP, new_stream("invalid_token")),
+        #     )
 
-            @test submit_log(stream, LogEvent("Foo")) == 1
-            CloudWatchLogs.update_sequence_token!(stream, "oops_invalid")
-            setlevel!(LOGGER, "debug") do
-                @test_log LOGGER "debug" "InvalidSequenceTokenException" begin
-                    submit_log(stream, LogEvent("Second time's the charm"))
-                end
-            end
-        end
+        #     @test submit_log(stream, LogEvent("Foo")) == 1
+        #     CloudWatchLogs.update_sequence_token!(stream, "oops_invalid")
+        #     setlevel!(LOGGER, "debug") do
+        #         @test_log LOGGER "debug" "InvalidSequenceTokenException" begin
+        #             submit_log(stream, LogEvent("Second time's the charm"))
+        #         end
+        #     end
+        # end
 
         @testset "Unsorted logs" begin
             stream_name = new_stream("unsorted")
