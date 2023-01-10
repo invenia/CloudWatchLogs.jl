@@ -112,6 +112,9 @@ end
 
 function Memento.emit(handler::CloudWatchLogHandler, record::Record)
     dt = isdefined(record, :date) ? record.date : Dates.now(tz"UTC")
+    # Memento@1.3 switched to only storing DateTime in order to make TimeZones.jl an
+    # optional dependency, but AWS requries timestamps in UTC, so we need a ZDT
+    dt = isa(dt, DateTime) ? astimezone(ZonedDateTime(dt, localzone()), tz"UTC") : dt
     message = format(handler.fmt, record)
     event = LogEvent(message, dt)
     return put!(handler.channel, event)
