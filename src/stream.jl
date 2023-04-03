@@ -134,7 +134,9 @@ end
 function describe_log_streams(
     config::AWSConfig, log_group_name::AbstractString, params::AbstractDict
 )
-    return CloudWatch_Logs.describe_log_streams(log_group_name, params; aws_config=config)
+    full_params = Dict("logGroupName" => log_group_name)
+    append!(full_params, params)
+    return CloudWatch_Logs.describe_log_streams(full_params; aws_config=config)
 end
 
 """

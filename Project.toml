@@ -1,6 +1,6 @@
 name = "CloudWatchLogs"
 uuid = "c4c1e6a2-6bdd-52e0-b56d-1d4734724d2d"
-version = "2.1.0"
+version = "2.1.1"
 
 [deps]
 AWS = "fbe9abb3-538b-5e4e-ba9e-bc94f4f92ebc"
