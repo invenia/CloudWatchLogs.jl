@@ -114,8 +114,8 @@
             @test create_stream(CFG, TEST_LOG_GROUP, stream_name) == stream_name
 
             response = CloudWatch_Logs.describe_log_streams(
-                TEST_LOG_GROUP,
                 Dict(
+                    "logGroupName" => TEST_LOG_GROUP,
                     "logStreamNamePrefix" => stream_name,
                     "limit" => 1,
                     "orderBy" => "LogStreamName",
@@ -129,8 +129,8 @@
             delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
             response = CloudWatch_Logs.describe_log_streams(
-                TEST_LOG_GROUP,
                 Dict(
+                    "logGroupName" => TEST_LOG_GROUP,
                     "logStreamNamePrefix" => stream_name,
                     "limit" => 1,
                     "orderBy" => "LogStreamName",
@@ -145,8 +145,8 @@
             stream_name = create_stream(CFG, TEST_LOG_GROUP)
 
             response = CloudWatch_Logs.describe_log_streams(
-                TEST_LOG_GROUP,
                 Dict(
+                    "logGroupName" => TEST_LOG_GROUP,
                     "logStreamNamePrefix" => stream_name,
                     "limit" => 1,
                     "orderBy" => "LogStreamName",
@@ -160,8 +160,8 @@
             delete_stream(CFG, TEST_LOG_GROUP, stream_name)
 
             response = CloudWatch_Logs.describe_log_streams(
-                TEST_LOG_GROUP,
                 Dict(
+                    "logGroupName" => TEST_LOG_GROUP,
                     "logStreamNamePrefix" => stream_name,
                     "limit" => 1,
                     "orderBy" => "LogStreamName",
@@ -192,7 +192,8 @@
 
             sleep(2)  # wait until AWS has injested the logs; this may or may not be enough
             response = CloudWatch_Logs.get_log_events(
-                TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true)
+                stream_name,
+                Dict("logGroupName" => TEST_LOG_GROUP, "startFromHead" => true),
             )
 
             time_range = (start_time - 10):(CloudWatchLogs.unix_timestamp_ms() + 10)
@@ -302,7 +303,8 @@
 
             sleep(5)  # wait until AWS has injested the logs; this may or may not be enough
             response = CloudWatch_Logs.get_log_events(
-                TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true)
+                stream_name,
+                Dict("logGroupName" => TEST_LOG_GROUP, "startFromHead" => true),
             )
 
             @test length(response["events"]) == 3
@@ -370,7 +372,8 @@
 
             sleep(1)  # wait until AWS has injested the logs; this may or may not be enough
             response = CloudWatch_Logs.get_log_events(
-                TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true)
+                stream_name,
+                Dict("logGroupName" => TEST_LOG_GROUP, "startFromHead" => true),
             )
 
             time_range = (start_time - 10):(CloudWatchLogs.unix_timestamp_ms() + 10)
@@ -414,7 +417,9 @@
 
             # wait for the logs to be submitted and for AWS to injest them
             sleep(10)
-            response = CloudWatch_Logs.get_log_events(TEST_LOG_GROUP, stream_name)
+            response = CloudWatch_Logs.get_log_events(
+                stream_name, Dict("logGroupName" => TEST_LOG_GROUP)
+            )
             prev_token = ""
             num_events_injested = 0
             while prev_token != response["nextBackwardToken"]
@@ -423,7 +428,8 @@
                 num_events_injested += length(response["events"])
 
                 response = CloudWatch_Logs.get_log_events(
-                    TEST_LOG_GROUP, stream_name, Dict("nextToken" => prev_token)
+                    stream_name,
+                    Dict("logGroupName" => TEST_LOG_GROUP, "nextToken" => prev_token),
                 )
             end
             @test num_events_injested == num_events
@@ -456,7 +462,12 @@
 
             sleep(10)  # wait until AWS has injested the logs; this may or may not be enough
             response = CloudWatch_Logs.get_log_events(
-                TEST_LOG_GROUP, stream_name, Dict("startFromHead" => true, "limit" => 1)
+                stream_name,
+                Dict(
+                    "logGroupName" => TEST_LOG_GROUP,
+                    "startFromHead" => true,
+                    "limit" => 1,
+                ),
             )
 
             @test length(response["events"]) == 1
@@ -465,7 +476,12 @@
 
             sleep(10)  # wait until AWS has injested the logs; this may or may not be enough
             response = CloudWatch_Logs.get_log_events(
-                TEST_LOG_GROUP, stream_name, Dict("startFromHead" => false, "limit" => 1)
+                stream_name,
+                Dict(
+                    "logGroupName" => TEST_LOG_GROUP,
+                    "startFromHead" => false,
+                    "limit" => 1,
+                ),
             )
 
             @test length(response["events"]) == 1
